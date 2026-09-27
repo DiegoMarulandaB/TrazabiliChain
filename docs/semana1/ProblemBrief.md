@@ -6,13 +6,13 @@
 
 > El problema ganador en una frase, sin mencionar blockchain, y quién lo propuso.
 
-Escriban aquí su respuesta.
+Las marcas afirman que su café, algodón o cacao es orgánico y de comercio justo, pero el consumidor final no tiene cómo verificarlo.
 
 ### Por qué elegimos este
 
 > Qué inclinó al equipo por este problema frente a los demás, según los criterios de la Sesión 1.
 
-Escriban aquí su respuesta.
+Me apoye en la inteligencia artifical para que me diera una guia y ese problema fue el que me llamo la atención, además si se llega a implementar puede dar una garantia al usuario de que producto esta comprando
 
 ### Propuestas descartadas
 
@@ -34,25 +34,25 @@ Escriban aquí su respuesta.
 
 > Nombre del proyecto y una frase que describa el problema. Extensión: breve.
 
-Escriban aquí su respuesta.
+Nombre del proyecto: TrazabiliChain, trazabilidad de productos organicos
 
 ### Equipo y roles
 
 > Integrantes con su usuario de GitHub, rol asumido por cada persona, responsable de las entregas y canal de coordinación interna. Extensión: breve.
 
-Escriban aquí su respuesta.
+Full stack
 
 ### Problema y evidencia
 
 > Enunciado del problema en una frase, sin mencionar blockchain. Contexto, frecuencia y alcance. Evidencia mínima de que el problema existe: observación directa, experiencia propia, conversaciones o fuentes consultadas, con enlace o cita cuando aplique. Extensión: 150–300 palabras.
 
-Escriban aquí su respuesta.
+Trazabilidad de productos organicos que ponen a la venta para el consumidor
 
 ### Usuario y actores
 
 > Quién sufre el problema y qué necesita resolver. Cómo lo resuelve hoy y qué le cuesta en dinero, tiempo o esfuerzo. Demás actores que intervienen en el flujo, con el papel que cumple cada uno. Extensión: 150–300 palabras.
 
-Escriban aquí su respuesta.
+Los compradores de productos organicos
 
 ### Flujo actual de valor
 
@@ -82,4 +82,6 @@ Escriban aquí su respuesta.
 
 > Dos o tres supuestos que tendrían que ser ciertos para que la hipótesis funcione, y qué podría invalidarla. Extensión: 150–300 palabras.
 
-Escriban aquí su respuesta.
+Hipotesis 1: aterrizar más la idea de negocio aprender blockchain y desarrollar la idea
+
+Invalidar: que no se concrete la idea y solo que en "papel"
