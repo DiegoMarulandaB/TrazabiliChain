@@ -25,8 +25,17 @@ Queda fuera del MVP: tokenización financiera de certificados, pagos, integraci�
 Este recorte conserva el valor central —consultar un historial asociado a un lote y detectar cambios posteriores— sin exigir integraciones complejas antes de probar la adopción. El piloto medirá la tasa de registros completos, el tiempo para registrar un evento, el porcentaje de lotes con evidencia y las consultas de QR.
 5. Lean Canvas
 1. Link https://canva.link/x6doc7jlyl5pvom
+2. ![canva imágen](image-2.png)
 6. Backlog priorizado — Kanban
-1. Link https://trello.com/invite/b/6ac265581cc96325bc69c433/ATTI975caa871fdae115e0f968e03cf905b44738CC48/trazabilichain
+1. https://github.com/DiegoMarulandaB/TrazabiliChain/projects
+Tengo un problema al crear el kanban en GitHub Projects, al querer crear la create new issue, se queda cargando y no aparece nada.
+![Create new issue](image-3.png)
+Y al realizarlo desde add item from repository, no me sale el repositorio del proyecto, aunque hice el fork correspondiente.
+![repositorios que me aparecen](image-1.png)
+ cuando busco mi respositorio aparece pero no me deja añadir ningún item, adjunto imagenes.
+![Encuentro el repositorio pero no puedo añadir item](image.png)
+Por tal motivo envio el link en Trello, por el momento.
+2. Link https://trello.com/invite/b/6ac265581cc96325bc69c433/ATTI975caa871fdae115e0f968e03cf905b44738CC48/trazabilichain
 7. Arquitectura inicial
 La arquitectura separa la experiencia de usuario, la lógica de negocio, el almacenamiento documental y la interacción con Stellar. Una aplicación web ofrece dos interfaces: un panel autenticado para productores, transportistas, fabricantes, certificadores, compradores y auditores; y una vista pública de consulta desde el QR. El backend autentica usuarios, valida permisos, comprueba los datos requeridos y gestiona lotes, eventos y certificados.
 Los datos operativos y documentos se guardan en una base de datos y almacenamiento de archivos fuera de Stellar. Esto permite búsquedas rápidas, control de acceso y manejo de documentos que no conviene publicar en una red compartida. Al crear un lote o registrar un evento, el backend genera una huella criptográfica del contenido relevante y envía a Stellar una transacción que registra esa referencia. El backend guarda el identificador de transacción y lo vincula al registro correspondiente.
