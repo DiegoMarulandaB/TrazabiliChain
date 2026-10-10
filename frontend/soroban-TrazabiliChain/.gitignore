@@ -1,0 +1,15 @@
+# Rust's output directory
+target
+
+# Local settings
+.soroban
+.stellar
+
+# Next.js
+.next/
+/out/
+/build/
+
+# Node.js
+node_modules/
+pnpm-debug.log*

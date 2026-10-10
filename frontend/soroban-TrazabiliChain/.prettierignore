@@ -1,0 +1,11 @@
+node_modules/
+.next/
+out/
+build/
+coverage/
+next-env.d.ts
+target/
+Cargo.lock
+pnpm-lock.yaml
+contracts/
+packages/hello_world/

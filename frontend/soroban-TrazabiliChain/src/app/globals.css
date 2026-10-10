@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #193332;
+  --color-muted: #687d79;
+  --color-line: #dce6e1;
+  --color-paper: #f6f8f5;
+  --color-surface: #ffffff;
+  --color-accent: #176b59;
+  --color-accent-soft: #e3f1eb;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #f6f8f5;
+  color: #193332;
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid #176b59;
+  outline-offset: 4px;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
