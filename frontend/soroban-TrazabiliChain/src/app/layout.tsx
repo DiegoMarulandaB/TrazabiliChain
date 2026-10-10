@@ -63,7 +63,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es">
+    <html lang="es" data-scroll-behavior="smooth">
       <body className="font-sans antialiased">
         <SplashScreen>{children}</SplashScreen>
       </body>

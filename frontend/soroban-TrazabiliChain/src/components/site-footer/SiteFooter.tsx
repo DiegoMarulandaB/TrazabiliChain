@@ -8,7 +8,7 @@ const socialLinks = [
   },
   {
     href: "https://x.com/trazabilichain_demo",
-    label: "",
+    label: "X",
     Icon: XLogo,
   },
   {
