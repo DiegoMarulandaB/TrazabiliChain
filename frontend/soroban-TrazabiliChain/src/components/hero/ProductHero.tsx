@@ -52,19 +52,18 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
               <Link
                 href="/#registro"
-                className="inline-flex items-center justify-center px-7 py-3.5 rounded-xl bg-accent text-white font-medium shadow-md hover:opacity-95 transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-3 focus-visible:outline-accent focus-visible:outline-offset-4"
+                className="inline-flex items-center justify-center px-7 py-3.5 rounded-md bg-accent text-white font-medium shadow-md hover:opacity-95 transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-3 focus-visible:outline-accent focus-visible:outline-offset-4"
               >
                 {primaryActionText}
               </Link>
               <button
                 onClick={onSecondaryClick}
-                className="px-7 py-3.5 rounded-xl bg-surface text-ink border border-line font-medium shadow-sm hover:bg-paper transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-3 focus-visible:outline-accent focus-visible:outline-offset-4"
+                className="px-7 py-3.5 rounded-md bg-surface text-ink border border-line font-medium shadow-sm hover:bg-paper transition-all duration-200 cursor-pointer focus-visible:outline focus-visible:outline-3 focus-visible:outline-accent focus-visible:outline-offset-4"
               >
                 {secondaryActionText}
               </button>
             </div>
 
-            {/* Métricas o indicadores rápidos de confianza */}
             <div className="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-line w-full max-w-xl">
               <div>
                 <p className="font-display text-2xl sm:text-3xl font-bold text-ink">100%</p>
@@ -81,9 +80,9 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
             </div>
           </div>
 
-          {/* Columna Visual / Tarjeta Interactiva de Muestra */}
+      
           <div className="lg:col-span-5 w-full">
-            <div className="relative p-6 sm:p-8 rounded-3xl bg-surface border border-line shadow-xl shadow-ink/5 backdrop-blur-xl">
+            <div className="relative p-6 sm:p-8 rounded-md bg-surface border border-line shadow-xl shadow-ink/5 backdrop-blur-xl">
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-line">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted">
                   Lote Activo #TRZ-2026-89
@@ -93,7 +92,6 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
                 </span>
               </div>
 
-              {/* Mini pasos de recorrido simulados */}
               <div className="space-y-4">
                 <div className="flex items-start gap-4 p-3 rounded-2xl bg-paper border border-line/60">
                   <div className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center text-sm font-bold shrink-0">
