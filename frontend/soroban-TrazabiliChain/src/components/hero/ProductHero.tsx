@@ -114,7 +114,7 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
                   <div>
                     <p className="text-sm font-semibold text-ink">Proceso y Transformación</p>
                     <p className="text-xs text-muted">
-                      Evidencia fotográfica y control de calidad cargados
+                      Evidencia y control de calidad usando blockchain
                     </p>
                   </div>
                 </div>

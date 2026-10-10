@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const navigation = [
   { href: "/#sobre", label: "Sobre" },
@@ -12,6 +12,7 @@ const navigation = [
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
   function closeMenu() {
     setIsMenuOpen(false);
@@ -24,9 +25,27 @@ export function Header() {
     }
   }
 
+  // Cerrar el menú al hacer clic fuera de él en mobile/tablet
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        closeMenu();
+      }
+    }
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
   return (
     <header
-      className="relative z-10 border-b border-line bg-white/90"
+      ref={headerRef}
+      className="sticky top-0 z-50 border-b border-line bg-white/90 backdrop-blur-md"
       onKeyDown={handleMenuKeyDown}
     >
       <a
