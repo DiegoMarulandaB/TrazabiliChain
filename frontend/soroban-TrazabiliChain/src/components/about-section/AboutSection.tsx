@@ -38,24 +38,22 @@ export function AboutSection() {
             Del origen al destino, cada lote tiene una historia. Hazla visible.
           </h2>
           <p className="mb-4 max-w-prose text-sm leading-7 text-muted sm:text-base">
-            TrazabiliChain está diseñada para darle continuidad a la historia de cada lote: su
-            origen, los hitos aportados por quienes participan en la cadena y las evidencias
-            relacionadas, reunidos en un recorrido fácil de consultar. En vez de perseguir
-            documentos dispersos, productores, marcas y compradores tendrán un punto común para
-            entender qué se registró y cuándo.
+            TrazabiliChain conecta el origen de un producto, a las personas que participan en su
+            recorrido y las evidencias asociadas. Así, productores, marcas y compradores pueden
+            consultar qué se registró y cuándo, sin reconstruir la historia a partir de documentos
+            dispersos.
           </p>
           <p className="mb-7 max-w-prose text-sm leading-7 text-muted sm:text-base">
-            El objetivo es que un código QR permita a cada consumidor conocer la información pública
-            seleccionada, mientras los equipos de abastecimiento y auditoría acceden a los detalles
-            que les corresponden. Cada dato conserva su procedencia: la tecnología ayuda a detectar
-            cambios posteriores, y las personas y procesos aportan la validación de origen.
+            Desde un código QR, un consumidor puede conocer el recorrido que se decidió compartir;
+            los equipos de abastecimiento y auditoría pueden revisar los registros disponibles para
+            tomar decisiones con más contexto.
           </p>
-          <Link
+          {/* <Link
             href="/#registro"
             className="inline-flex min-h-11 items-center rounded-md bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-[#125746] focus-visible:outline-offset-2"
           >
             Explorar los registros
-          </Link>
+          </Link> */}
         </div>
 
         <div className="grid content-start divide-y divide-line border-y border-line">

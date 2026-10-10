@@ -2,6 +2,7 @@ import { Header } from "@/components/header/Header";
 import { AboutSection } from "@/components/about-section/AboutSection";
 import { RecordsPanel } from "@/components/records-panel/RecordsPanel";
 import { SiteFooter } from "@/components/site-footer/SiteFooter";
+import ProductHero from "@/components/hero/ProductHero";
 
 export default function Home() {
   return (
@@ -11,8 +12,9 @@ export default function Home() {
         id="contenido"
         className="mx-auto w-[min(100%-2.5rem,70rem)] py-11 sm:w-[min(100%-3rem,70rem)] sm:py-16"
       >
-        <RecordsPanel />
+        <ProductHero />
         <AboutSection />
+        <RecordsPanel />
       </main>
       <SiteFooter />
     </div>

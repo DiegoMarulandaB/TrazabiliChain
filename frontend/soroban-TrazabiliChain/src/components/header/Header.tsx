@@ -5,8 +5,8 @@ import { useRef, useState } from "react";
 
 const navigation = [
   { href: "/#sobre", label: "Sobre" },
-  { href: "/#contacto", label: "Contacto" },
   { href: "/#registro", label: "Registro" },
+  { href: "/#contacto", label: "Contacto" },
 ];
 
 export function Header() {
