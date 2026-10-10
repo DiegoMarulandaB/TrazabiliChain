@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { SplashScreen } from "@/components/splash-screen/SplashScreen";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// "http://localhost:3000";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trazabilichain.vercel.app/";
 const siteTitle = "TrazabiliChain | Trazabilidad del origen al destino";
 const siteDescription =
   "Conoce el propósito de TrazabiliChain: conectar lotes, actores y evidencias en un historial de trazabilidad claro y verificable.";
