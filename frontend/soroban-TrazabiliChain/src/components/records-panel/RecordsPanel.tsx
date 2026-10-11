@@ -314,15 +314,17 @@ export function RecordsPanel() {
                   <label htmlFor="origin-date" className="text-sm font-semibold text-ink">
                     Fecha del lote
                   </label>
-                  <input
-                    id="origin-date"
-                    name="originDate"
-                    type="date"
-                    required
-                    value={form.originDate}
-                    onChange={(event) => updateField("originDate", event.target.value)}
-                    className="date-input min-h-11 min-w-0 cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink focus-visible:border-accent focus-visible:outline-accent"
-                  />
+                  <div className="relative flex items-center">
+                    <input
+                      id="origin-date"
+                      name="originDate"
+                      type="date"
+                      required
+                      value={form.originDate}
+                      onChange={(event) => updateField("originDate", event.target.value)}
+                      className="date-input min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink focus-visible:border-accent focus-visible:outline-accent [&::-webkit-calendar-picker-indicator]:opacity-100"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid content-start gap-1.5">
