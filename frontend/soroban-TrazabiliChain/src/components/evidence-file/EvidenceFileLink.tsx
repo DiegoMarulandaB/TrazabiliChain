@@ -34,7 +34,7 @@ export function EvidenceFileLink({
   }, [evidenceId]);
 
   if (!fileUrl) {
-    return <span className="text-xs text-muted">Archivo local no disponible</span>;
+    return <span className="text-xs text-gray-700">Archivo local no disponible</span>;
   }
 
   return (

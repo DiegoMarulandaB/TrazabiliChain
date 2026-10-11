@@ -48,6 +48,14 @@ export function EventForm({
     if (submissionInProgress.current) {
       return;
     }
+    if (!lotId || !eventTypes.includes(type) || !occurredAt || !details.trim()) {
+      setMessage("Completa los campos obligatorios del evento antes de continuar.");
+      return;
+    }
+    if (!actorName.trim() || !organization.trim()) {
+      setMessage("Completa el actor y la organización declarados en el perfil de trabajo.");
+      return;
+    }
     if (evidenceFile && evidenceFile.size > maximumEvidenceSize) {
       setMessage("La evidencia supera el límite local de 10 MB.");
       return;
@@ -130,7 +138,7 @@ export function EventForm({
 
   if (records.length === 0) {
     return (
-      <p className="text-sm text-muted">Primero registra un lote para poder agregar eventos.</p>
+      <p className="text-sm text-gray-700">Primero registra un lote para poder agregar eventos.</p>
     );
   }
 
@@ -139,7 +147,7 @@ export function EventForm({
       <h2 id="event-form-title" className="font-display text-2xl font-medium text-ink">
         Registrar evento de cadena
       </h2>
-      <p className="mt-2 text-sm leading-6 text-muted">
+      <p className="mt-2 text-sm leading-6 text-gray-700">
         Identifica el lote, el hito y quién lo reporta. La fecha del evento y la fecha de captura se
         guardan por separado.
       </p>
@@ -168,6 +176,7 @@ export function EventForm({
           </label>
           <select
             id="event-type"
+            required
             value={type}
             onChange={(event) => setType(event.target.value)}
             className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink"
@@ -223,7 +232,7 @@ export function EventForm({
             onChange={(event) => setEvidenceFile(event.target.files?.[0] ?? null)}
             className="min-h-11 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
           />
-          <p className="mb-0 text-xs text-muted">
+          <p className="mb-0 text-xs text-gray-700">
             El archivo y su huella se guardan solo en este navegador, no en Stellar.
           </p>
         </div>

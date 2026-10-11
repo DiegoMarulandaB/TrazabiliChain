@@ -86,7 +86,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
   }
 
   if (!shareUrl) {
-    return <p className="mb-0 text-xs text-muted">Preparando el enlace del QR…</p>;
+    return <p className="mb-0 text-xs text-gray-700">Preparando el enlace del QR…</p>;
   }
 
   const emailUrl = `mailto:?subject=${encodeURIComponent(`TrazabiliChain · ${record.product}`)}&body=${encodeURIComponent(`${shareText}: ${shareUrl}\n\nEnlace de demostración local.`)}`;
@@ -108,7 +108,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
 
       <div className="min-w-0">
         <p className="mb-1 text-sm font-semibold text-ink">QR de consulta</p>
-        <p className="mb-3 break-all font-mono text-xs text-muted">ID: {record.id}</p>
+        <p className="mb-3 break-all font-mono text-xs text-gray-700">ID: {record.id}</p>
         <details
           ref={shareDetailsRef}
           className="relative inline-block"
@@ -129,7 +129,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
             <a
               href={emailUrl}
               onClick={closeShareMenu}
-              className="flex min-h-11 items-center gap-3 rounded px-3 text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-[-2px]"
+              className="flex min-h-11 items-center gap-3 rounded px-3 text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-2"
             >
               <EnvelopeSimple size={19} aria-hidden="true" />
               <span>Correo electrónico</span>
@@ -140,7 +140,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
               rel="noopener noreferrer"
               aria-label="Compartir en X (abre en una pestaña nueva)"
               onClick={closeShareMenu}
-              className="flex min-h-11 items-center gap-3 rounded px-3 text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-[-2px]"
+              className="flex min-h-11 items-center gap-3 rounded px-3 text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-2"
             >
               <XLogo size={19} aria-hidden="true" />
               <span>X</span>
@@ -151,7 +151,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
               rel="noopener noreferrer"
               aria-label="Compartir en LinkedIn (abre en una pestaña nueva)"
               onClick={closeShareMenu}
-              className="flex min-h-11 items-center gap-3 rounded px-3 text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-[-2px]"
+              className="flex min-h-11 items-center gap-3 rounded px-3 text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-2"
             >
               <LinkedinLogo size={19} aria-hidden="true" />
               <span>LinkedIn</span>
@@ -159,7 +159,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
             <button
               type="button"
               onClick={() => copyShareUrl("instagram")}
-              className="flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-left text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-[-2px]"
+              className="flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-left text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-2"
             >
               <InstagramLogo size={19} aria-hidden="true" />
               <span>Instagram</span>
@@ -167,7 +167,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
             <button
               type="button"
               onClick={() => copyShareUrl()}
-              className="flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-left text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-[-2px]"
+              className="flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-left text-sm font-medium text-ink hover:bg-paper focus-visible:outline-offset-2"
             >
               <LinkSimple size={19} aria-hidden="true" />
               <span>Copiar enlace</span>
@@ -189,7 +189,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
             />
           </div>
         )}
-        <p className="mt-3 mb-0 text-xs leading-5 text-muted">
+        <p className="mt-3 mb-0 text-xs leading-5 text-gray-700">
           El QR solo contiene el identificador aleatorio y el enlace, no los datos del lote. En esta
           demo el destino funciona únicamente en este navegador.
         </p>

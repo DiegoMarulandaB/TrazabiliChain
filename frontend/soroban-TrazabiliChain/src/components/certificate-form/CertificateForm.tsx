@@ -44,6 +44,14 @@ export function CertificateForm({
     if (submissionInProgress.current) {
       return;
     }
+    if (!lotId || !name.trim() || !issuer.trim() || !certificateNumber.trim() || !issuedAt) {
+      setMessage("Completa todos los campos obligatorios del certificado.");
+      return;
+    }
+    if (!actorName.trim() || !organization.trim()) {
+      setMessage("Completa el actor y la organización declarados en el perfil de trabajo.");
+      return;
+    }
     if (!file || !lotId) {
       setMessage("Selecciona un lote y el archivo que respalda el certificado.");
       return;
@@ -131,7 +139,7 @@ export function CertificateForm({
 
   if (records.length === 0) {
     return (
-      <p className="text-sm text-muted">Primero registra un lote para asociar certificados.</p>
+      <p className="text-sm text-gray-700">Primero registra un lote para asociar certificados.</p>
     );
   }
 
@@ -140,7 +148,7 @@ export function CertificateForm({
       <h2 id="certificate-form-title" className="font-display text-2xl font-medium text-ink">
         Asociar certificado
       </h2>
-      <p className="mt-2 text-sm leading-6 text-muted">
+      <p className="mt-2 text-sm leading-6 text-gray-700">
         Conserva emisor, fechas y huella SHA-256. El archivo permanece en el almacenamiento local de
         este navegador.
       </p>
@@ -241,7 +249,7 @@ export function CertificateForm({
             className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink"
           />
         </div>
-        <p className="m-0 self-center text-xs text-muted sm:col-span-2">
+        <p className="m-0 self-center text-xs text-gray-700  sm:col-span-2">
           Asociado por {actorName} · {organization}. El rol y emisor son declaraciones de demo, no
           identidades autenticadas.
         </p>

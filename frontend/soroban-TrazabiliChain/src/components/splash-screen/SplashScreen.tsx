@@ -86,7 +86,7 @@ export function SplashScreen({ children }: SplashScreenProps) {
               >
                 TrazabiliChain
               </h1>
-              <p className="mx-auto mb-10 max-w-md text-sm leading-6 text-muted sm:text-base">
+              <p className="mx-auto mb-10 max-w-md text-sm leading-6 text-gray-700  sm:text-base">
                 Conectamos el origen de cada producto con un historial verificable de su recorrido y
                 sus evidencias.
               </p>

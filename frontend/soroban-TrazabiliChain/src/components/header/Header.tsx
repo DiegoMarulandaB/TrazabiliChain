@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 const navigation = [
   { href: "/#sobre", label: "Sobre" },
-  { href: "/#registro", label: "Registro" },
+  { href: "/registros", label: "Registro" },
   { href: "/#contacto", label: "Contacto" },
 ];
 
@@ -25,7 +25,6 @@ export function Header() {
     }
   }
 
-  // Cerrar el menú al hacer clic fuera de él en mobile/tablet
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
@@ -54,7 +53,7 @@ export function Header() {
       >
         Saltar al contenido
       </a>
-      <div className="mx-auto flex min-h-16 max-w-[1120px] items-center justify-between gap-4 px-5 sm:min-h-[72px] sm:px-8">
+      <div className="mx-auto flex min-h-16 max-w-280 items-center justify-between gap-4 px-5 sm:min-h-18 sm:px-8">
         <Link
           className="inline-flex shrink-0 items-center gap-2.5 font-display text-[19px] font-semibold text-ink sm:text-xl"
           href="/"
@@ -62,7 +61,7 @@ export function Header() {
           onClick={closeMenu}
         >
           <span
-            className="grid size-[30px] place-items-center rounded-md bg-accent font-sans text-base text-white"
+            className="grid size-7.5 place-items-center rounded-md bg-accent font-sans text-base text-white"
             aria-hidden="true"
           >
             T
@@ -106,7 +105,7 @@ export function Header() {
             onClick={() => setIsMenuOpen((open) => !open)}
           >
             <span className="sr-only">Menú de navegación</span>
-            <span className="flex w-[18px] flex-col gap-[5px]" aria-hidden="true">
+            <span className="flex w-4.5 flex-col gap-1.25" aria-hidden="true">
               <span className="h-0.5 w-full rounded bg-current" />
               <span className="h-0.5 w-full rounded bg-current" />
               <span className="h-0.5 w-full rounded bg-current" />

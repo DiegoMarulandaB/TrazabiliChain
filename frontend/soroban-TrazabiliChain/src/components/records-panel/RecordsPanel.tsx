@@ -49,9 +49,12 @@ export function RecordsPanel() {
   const [activeOrganization, setActiveOrganization] = useState("Organización de demostración");
   const [newRecordId, setNewRecordId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const [formError, setFormError] = useState("");
   const [storageError, setStorageError] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const recordElements = useRef<Record<string, HTMLLIElement | null>>({});
+  const eventCount = records.reduce((total, record) => total + record.events.length, 0);
+  const certificateCount = records.reduce((total, record) => total + record.certificates.length, 0);
 
   useGSAP(
     () => {
@@ -93,6 +96,7 @@ export function RecordsPanel() {
   );
 
   function updateField(field: keyof LotForm, value: string) {
+    setFormError("");
     setForm((current) => ({ ...current, [field]: value }));
   }
 
@@ -102,9 +106,24 @@ export function RecordsPanel() {
       setAnnouncement("El perfil seleccionado no puede crear lotes en este flujo de demo.");
       return;
     }
+    if (
+      !form.product.trim() ||
+      !form.characteristics.trim() ||
+      !form.origin.trim() ||
+      !form.originDate ||
+      !form.organization.trim()
+    ) {
+      setFormError(
+        "Completa todos los campos obligatorios. No se aceptan campos con solo espacios.",
+      );
+      return;
+    }
 
     const record: LotRecord = {
       ...form,
+      product: form.product.trim(),
+      characteristics: form.characteristics.trim(),
+      origin: form.origin.trim(),
       organization: form.organization.trim(),
       id: window.crypto.randomUUID(),
       createdAt: new Date().toISOString(),
@@ -131,29 +150,51 @@ export function RecordsPanel() {
         className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5"
       >
         <div>
-          <p className="mb-2.5 text-[11px] font-bold text-accent">TRAZABILIDAD DE LOTES</p>
+          <p className="mb-2.5 text-[11px] font-bold text-accent">OPERACIÓN DE LOTES</p>
           <h1
             id="page-title"
             className="font-display text-[30px] font-medium text-ink sm:text-[34px]"
           >
-            Registros
+            Panel de trazabilidad
           </h1>
         </div>
-        <span className="pb-1 text-xs text-muted" aria-live="polite">
+        <span className="pb-1 text-xs text-gray-700" aria-live="polite">
           {records.length} {records.length === 1 ? "registro" : "registros"}
         </span>
       </div>
 
+      <dl className="my-6 grid grid-cols-3 divide-x divide-line border-y border-line bg-white">
+        <div className="px-3 py-4 sm:px-5 sm:py-5">
+          <dd className="mb-1 font-display text-2xl font-medium text-ink sm:text-3xl">
+            {records.length}
+          </dd>
+          <dt className="text-xs leading-4 text-gray-700 sm:text-sm">Lotes registrados</dt>
+        </div>
+        <div className="px-3 py-4 sm:px-5 sm:py-5">
+          <dd className="mb-1 font-display text-2xl font-medium text-ink sm:text-3xl">
+            {eventCount}
+          </dd>
+          <dt className="text-xs leading-4 text-gray-700 sm:text-sm">Eventos asociados</dt>
+        </div>
+        <div className="px-3 py-4 sm:px-5 sm:py-5">
+          <dd className="mb-1 font-display text-2xl font-medium text-ink sm:text-3xl">
+            {certificateCount}
+          </dd>
+          <dt className="text-xs leading-4 text-gray-700 sm:text-sm">Certificados asociados</dt>
+        </div>
+      </dl>
+
       <section
         aria-labelledby="demo-profile-title"
-        className="my-6 grid gap-4 border-l-2 border-amber-600 bg-amber-50 px-4 py-4 sm:grid-cols-3 sm:items-end"
+        className="my-6 grid gap-4 border border-line bg-white px-4 py-4 sm:grid-cols-3 sm:items-end sm:px-5"
       >
         <div className="sm:col-span-3">
-          <h2 id="demo-profile-title" className="mb-1 text-sm font-semibold text-amber-950">
-            Perfil del flujo de demostración
+          <h2 id="demo-profile-title" className="mb-1 text-sm font-semibold text-ink">
+            Perfil de trabajo
           </h2>
-          <p className="mb-0 text-xs leading-5 text-amber-950">
-            Cambiar el rol solo modifica la interfaz; no autentica al usuario ni protege los datos.
+          <p className="mb-0 text-xs leading-5 text-gray-700">
+            El rol cambia las vistas disponibles en esta demostración; no representa permisos de
+            organización.
           </p>
         </div>
         <div className="grid gap-1.5">
@@ -211,7 +252,7 @@ export function RecordsPanel() {
               >
                 Registrar un lote
               </h2>
-              <p className="mb-0 text-sm leading-6 text-muted">
+              <p className="mb-0 text-sm leading-6 text-gray-700">
                 Añade los datos de origen y la organización responsable.
               </p>
             </div>
@@ -229,7 +270,7 @@ export function RecordsPanel() {
                   maxLength={100}
                   value={form.product}
                   onChange={(event) => updateField("product", event.target.value)}
-                  className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-muted focus-visible:border-accent focus-visible:outline-accent"
+                  className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-gray-700 focus-visible:border-accent focus-visible:outline-accent"
                   placeholder="Café en grano"
                 />
               </div>
@@ -263,7 +304,7 @@ export function RecordsPanel() {
                   maxLength={160}
                   value={form.origin}
                   onChange={(event) => updateField("origin", event.target.value)}
-                  className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-muted focus-visible:border-accent focus-visible:outline-accent"
+                  className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-gray-700 focus-visible:border-accent focus-visible:outline-accent"
                   placeholder="Finca, municipio, país"
                 />
               </div>
@@ -296,7 +337,7 @@ export function RecordsPanel() {
                     maxLength={100}
                     value={form.organization}
                     onChange={(event) => updateField("organization", event.target.value)}
-                    className="min-h-11 min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-muted focus-visible:border-accent focus-visible:outline-accent"
+                    className="min-h-11 min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-gray-700 focus-visible:border-accent focus-visible:outline-accent"
                     placeholder="Nombre de la organización"
                   />
                 </div>
@@ -310,7 +351,13 @@ export function RecordsPanel() {
               </button>
             </form>
 
-            <p className="mt-4 mb-0 text-xs leading-5 text-muted">
+            {formError && (
+              <p className="mt-3 mb-0 text-sm text-red-800" role="alert">
+                {formError}
+              </p>
+            )}
+
+            <p className="mt-4 mb-0 text-xs leading-5 text-gray-700">
               Modo de demostración local: los datos se guardan solo en este navegador. No hay inicio
               de sesión ni permisos reales. No registres información sensible; los enlaces
               compartidos no se resolverán en otros dispositivos.
@@ -391,7 +438,7 @@ export function RecordsPanel() {
                   —
                 </span>
                 <p className="mb-1 font-medium text-ink">Aún no hay lotes</p>
-                <p className="mb-0 text-sm text-muted">
+                <p className="mb-0 text-sm text-gray-700">
                   El primer registro aparecerá en este historial.
                 </p>
               </div>
@@ -414,7 +461,7 @@ export function RecordsPanel() {
                           </p>
                         )}
                         <h3 className="mb-1 font-semibold text-ink">{record.product}</h3>
-                        <p className="mb-0 text-sm text-muted">{record.origin}</p>
+                        <p className="mb-0 text-sm text-gray-700">{record.origin}</p>
                       </div>
                       <span className="rounded bg-accent-soft px-2 py-1 text-xs font-medium text-accent">
                         Lote
@@ -422,7 +469,7 @@ export function RecordsPanel() {
                     </div>
                     <dl className="mt-4 grid gap-x-4 gap-y-3 border-t border-line pt-3 text-sm sm:grid-cols-2">
                       <div>
-                        <dt className="text-xs text-muted">Fecha del lote</dt>
+                        <dt className="text-xs text-gray-700">Fecha del lote</dt>
                         <dd className="mt-1 mb-0 text-ink">
                           <time dateTime={record.originDate}>
                             {new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(
@@ -432,11 +479,11 @@ export function RecordsPanel() {
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-muted">Organización responsable</dt>
+                        <dt className="text-xs text-gray-700">Organización responsable</dt>
                         <dd className="mt-1 mb-0 text-ink">{record.organization}</dd>
                       </div>
                       <div className="sm:col-span-2">
-                        <dt className="text-xs text-muted">Creado</dt>
+                        <dt className="text-xs text-gray-700">Creado</dt>
                         <dd className="mt-1 mb-0 text-ink">
                           <time dateTime={record.createdAt}>
                             {formatCreatedAt(record.createdAt)}
@@ -456,11 +503,11 @@ export function RecordsPanel() {
                           {record.events.map((lotEvent) => (
                             <li key={lotEvent.id} className="relative">
                               <span
-                                className="absolute -left-[1.32rem] top-1.5 size-2 rounded-full bg-accent"
+                                className="absolute left-[-1.32rem] top-1.5 size-2 rounded-full bg-accent"
                                 aria-hidden="true"
                               />
                               <p className="mb-1 text-sm font-medium text-ink">{lotEvent.type}</p>
-                              <p className="mb-1 text-xs text-muted">
+                              <p className="mb-1 text-xs text-gray-700">
                                 {new Intl.DateTimeFormat("es-CO", {
                                   dateStyle: "medium",
                                   timeStyle: "short",
@@ -494,14 +541,14 @@ export function RecordsPanel() {
                           {record.certificates.map((certificate) => (
                             <li key={certificate.id} className="text-sm">
                               <p className="mb-1 font-medium text-ink">{certificate.name}</p>
-                              <p className="mb-1 text-xs text-muted">
+                              <p className="mb-1 text-xs text-gray-700">
                                 Emisor declarado: {certificate.issuer} ·{" "}
                                 {certificate.certificateNumber}
                               </p>
-                              <p className="mb-1 break-all font-mono text-[11px] text-muted">
+                              <p className="mb-1 break-all font-mono text-[11px] text-gray-700">
                                 SHA-256: {certificate.evidenceSha256}
                               </p>
-                              <p className="mb-2 text-xs text-muted">
+                              <p className="mb-2 text-xs text-gray-700">
                                 Asociado por {certificate.recordedBy} ·{" "}
                                 {certificate.recordedByRole
                                   ? roleLabels[certificate.recordedByRole]
@@ -511,7 +558,7 @@ export function RecordsPanel() {
                                 evidenceId={certificate.id}
                                 fileName={certificate.evidenceFileName}
                               />
-                              <p className="mb-0 text-xs text-muted">
+                              <p className="mb-0 text-xs text-gray-700">
                                 Asociado como evidencia; no implica que el emisor o certificado haya
                                 sido validado.
                               </p>

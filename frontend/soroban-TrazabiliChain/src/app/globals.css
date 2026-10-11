@@ -21,6 +21,21 @@ html {
   scroll-behavior: smooth;
 }
 
+.records-route-enter {
+  animation: records-enter 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes records-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 body {
   margin: 0;
   background: #f6f8f5;
@@ -40,5 +55,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .records-route-enter {
+    animation: none;
   }
 }

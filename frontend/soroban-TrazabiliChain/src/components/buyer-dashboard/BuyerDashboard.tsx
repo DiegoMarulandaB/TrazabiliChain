@@ -28,7 +28,7 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
       <h2 id="buyer-title" className="font-display text-2xl font-medium text-ink">
         Consulta de abastecimiento
       </h2>
-      <p className="mt-2 text-sm leading-6 text-muted">
+      <p className="mt-2 text-sm leading-6 text-gray-700 ">
         Filtra lotes y revisa las evidencias declaradas para respaldar la evaluación de compra.
       </p>
       <div className="mt-5 flex flex-wrap items-end gap-4">
@@ -54,7 +54,7 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
           Solo certificados con vigencia declarada actual
         </label>
       </div>
-      <p className="mt-4 text-xs text-muted" aria-live="polite">
+      <p className="mt-4 text-xs text-gray-700 " aria-live="polite">
         {filteredRecords.length} de {records.length} lotes
       </p>
       <div className="mt-3 grid gap-3">
@@ -63,11 +63,11 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 className="mb-1 font-semibold text-ink">{record.product}</h3>
-                <p className="mb-0 text-sm text-muted">
+                <p className="mb-0 text-sm text-gray-700 ">
                   {record.origin} · {record.organization}
                 </p>
               </div>
-              <span className="text-xs text-muted">
+              <span className="text-xs text-gray-700 ">
                 {record.certificates.length}{" "}
                 {record.certificates.length === 1 ? "evidencia" : "evidencias"}
               </span>
@@ -80,15 +80,18 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
                 {record.certificates.map((certificate) => (
                   <li key={certificate.id}>
                     <span className="font-medium text-ink">{certificate.name}</span>
-                    <span className="text-muted"> · Emisor declarado: {certificate.issuer}</span>
-                    <span className="block text-xs text-muted">
+                    <span className="text-gray-700 ">
+                      {" "}
+                      · Emisor declarado: {certificate.issuer}
+                    </span>
+                    <span className="block text-xs text-gray-700 ">
                       Emisión: {certificate.issuedAt}; vence:{" "}
                       {certificate.validUntil || "sin fecha indicada"}
                     </span>
-                    <span className="block break-all font-mono text-[11px] text-muted">
+                    <span className="block break-all font-mono text-[11px] text-gray-700 ">
                       SHA-256: {certificate.evidenceSha256}
                     </span>
-                    <span className="block text-xs text-muted">
+                    <span className="block text-xs text-gray-700 ">
                       Asociado por {certificate.recordedBy}; emisor declarado, no verificado.
                     </span>
                     <EvidenceFileLink
@@ -107,7 +110,7 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
                 {record.events.map((event) => (
                   <li key={event.id} className="text-sm">
                     <p className="mb-1 font-medium text-ink">{event.type}</p>
-                    <p className="mb-1 text-xs text-muted">
+                    <p className="mb-1 text-xs text-gray-700">
                       {new Intl.DateTimeFormat("es-CO", {
                         dateStyle: "medium",
                         timeStyle: "short",
@@ -117,7 +120,7 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
                     </p>
                     <p className="mb-1 text-sm text-ink">{event.details}</p>
                     {event.evidenceSha256 && (
-                      <p className="mb-0 break-all font-mono text-[11px] text-muted">
+                      <p className="mb-0 break-all font-mono text-[11px] text-gray-700">
                         SHA-256 de evidencia: {event.evidenceSha256}
                       </p>
                     )}
@@ -128,14 +131,14 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
                 ))}
               </ol>
             )}
-            <p className="mt-3 mb-0 text-xs text-muted">
+            <p className="mt-3 mb-0 text-xs text-gray-700">
               La asociación y el emisor son declaraciones de demo; no implican validación del
               certificado.
             </p>
           </article>
         ))}
         {filteredRecords.length === 0 && (
-          <p className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-muted">
+          <p className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-gray-700">
             No hay lotes que coincidan con estos filtros.
           </p>
         )}

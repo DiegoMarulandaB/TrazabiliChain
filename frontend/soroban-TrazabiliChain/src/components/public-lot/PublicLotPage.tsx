@@ -34,7 +34,7 @@ export function PublicLotPage({ id }: { id: string }) {
       </Link>
 
       {!hydrated ? (
-        <p className="mt-10 text-sm text-muted" role="status">
+        <p className="mt-10 text-sm text-gray-700" role="status">
           Consultando registro local…
         </p>
       ) : record ? (
@@ -43,33 +43,33 @@ export function PublicLotPage({ id }: { id: string }) {
           <h1 className="mb-6 font-display text-3xl font-medium text-ink">{record.product}</h1>
           <dl className="grid gap-5 sm:grid-cols-2">
             <div>
-              <dt className="text-xs text-muted">Identificador del lote</dt>
+              <dt className="text-xs text-gray-700">Identificador del lote</dt>
               <dd className="mt-1 break-all font-mono text-sm text-ink">{record.id}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted">Origen</dt>
+              <dt className="text-xs text-gray-700 ">Origen</dt>
               <dd className="mt-1 text-sm text-ink">{record.origin}</dd>
             </div>
             {record.characteristics && (
               <div className="sm:col-span-2">
-                <dt className="text-xs text-muted">Características del lote</dt>
+                <dt className="text-xs text-gray-700">Características del lote</dt>
                 <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-ink">
                   {record.characteristics}
                 </dd>
               </div>
             )}
             <div>
-              <dt className="text-xs text-muted">Fecha del lote</dt>
+              <dt className="text-xs text-gray-700">Fecha del lote</dt>
               <dd className="mt-1 text-sm text-ink">
                 <time dateTime={record.originDate}>{formatDate(record.originDate)}</time>
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-muted">Organización responsable</dt>
+              <dt className="text-xs text-gray-700">Organización responsable</dt>
               <dd className="mt-1 text-sm text-ink">{record.organization}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted">Creado</dt>
+              <dt className="text-xs text-gray-700">Creado</dt>
               <dd className="mt-1 text-sm text-ink">
                 <time dateTime={record.createdAt}>{formatDate(record.createdAt, true)}</time>
               </dd>
@@ -84,11 +84,11 @@ export function PublicLotPage({ id }: { id: string }) {
                 {record.events.map((event) => (
                   <li key={event.id} className="relative">
                     <span
-                      className="absolute -left-[1.38rem] top-1.5 size-2 rounded-full bg-accent"
+                      className="absolute left-[1.38rem] top-1.5 size-2 rounded-full bg-accent"
                       aria-hidden="true"
                     />
                     <h3 className="mb-1 text-sm font-semibold text-ink">{event.type}</h3>
-                    <p className="mb-1 text-xs text-muted">
+                    <p className="mb-1 text-xs text-gray-700">
                       <time dateTime={event.occurredAt}>{formatDate(event.occurredAt, true)}</time>
                       {" · "}
                       {event.actorName} · {event.organization}
@@ -103,7 +103,7 @@ export function PublicLotPage({ id }: { id: string }) {
                 ))}
               </ol>
             ) : (
-              <p className="mt-3 mb-0 text-sm text-muted">
+              <p className="mt-3 mb-0 text-sm text-gray-700">
                 Aún no hay eventos asociados a este lote.
               </p>
             )}
@@ -125,15 +125,15 @@ export function PublicLotPage({ id }: { id: string }) {
                     <h3 className="mb-2 text-sm font-semibold text-ink">{certificate.name}</h3>
                     <dl className="grid gap-3 text-sm sm:grid-cols-2">
                       <div>
-                        <dt className="text-xs text-muted">Emisor declarado</dt>
+                        <dt className="text-xs text-gray-700">Emisor declarado</dt>
                         <dd className="mt-1 mb-0 text-ink">{certificate.issuer}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-muted">Número</dt>
+                        <dt className="text-xs text-gray-700">Número</dt>
                         <dd className="mt-1 mb-0 text-ink">{certificate.certificateNumber}</dd>
                       </div>
                       <div>
-                        <dt className="text-xs text-muted">Vigencia declarada</dt>
+                        <dt className="text-xs text-gray-700">Vigencia declarada</dt>
                         <dd className="mt-1 mb-0 text-ink">
                           {certificate.validUntil
                             ? formatDate(certificate.validUntil)
@@ -141,13 +141,13 @@ export function PublicLotPage({ id }: { id: string }) {
                         </dd>
                       </div>
                       <div className="sm:col-span-2">
-                        <dt className="text-xs text-muted">Huella SHA-256 del archivo</dt>
+                        <dt className="text-xs text-gray-700">Huella SHA-256 del archivo</dt>
                         <dd className="mt-1 mb-0 break-all font-mono text-xs text-ink">
                           {certificate.evidenceSha256}
                         </dd>
                       </div>
                       <div className="sm:col-span-2">
-                        <dt className="text-xs text-muted">Asociado por</dt>
+                        <dt className="text-xs text-gray-700">Asociado por</dt>
                         <dd className="mt-1 mb-0 text-sm text-ink">
                           {certificate.recordedBy} ·{" "}
                           {certificate.recordedByRole
@@ -166,7 +166,7 @@ export function PublicLotPage({ id }: { id: string }) {
                         </dd>
                       </div>
                     </dl>
-                    <p className="mt-3 mb-0 text-xs leading-5 text-muted">
+                    <p className="mt-3 mb-0 text-xs leading-5 text-gray-700">
                       Documento y emisor declarados por el usuario; no han sido verificados por la
                       plataforma.
                     </p>
@@ -174,12 +174,12 @@ export function PublicLotPage({ id }: { id: string }) {
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 mb-0 text-sm text-muted">
+              <p className="mt-3 mb-0 text-sm text-gray-700">
                 No se han asociado certificados a este lote.
               </p>
             )}
           </section>
-          <p className="mt-7 mb-0 border-t border-line pt-4 text-xs leading-5 text-muted">
+          <p className="mt-7 mb-0 border-t border-line pt-4 text-xs leading-5 text-gray-700">
             Vista local de demostración. Estos datos no se han verificado ni anclado en Stellar y
             solo están disponibles en el navegador donde se creó el lote.
           </p>
@@ -189,7 +189,7 @@ export function PublicLotPage({ id }: { id: string }) {
           <h1 id="not-found-title" className="font-display text-3xl font-medium text-ink">
             Registro no disponible
           </h1>
-          <p className="mt-3 max-w-prose text-sm leading-6 text-muted">
+          <p className="mt-3 max-w-prose text-sm leading-6 text-gray-700">
             Este enlace apunta a un identificador de demostración que no está guardado en este
             navegador. Los enlaces compartidos entre dispositivos requieren un backend persistente.
           </p>

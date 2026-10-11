@@ -46,7 +46,7 @@ export function AuditDashboard({ records }: { records: LotRecord[] }) {
       <h2 id="audit-title" className="font-display text-2xl font-medium text-ink">
         Revisión de auditoría
       </h2>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-700">
         Historial ordenado por momento de captura, con advertencias básicas de consistencia. Estas
         reglas no detectan fraude ni validan la veracidad de los datos.
       </p>
@@ -71,13 +71,13 @@ export function AuditDashboard({ records }: { records: LotRecord[] }) {
                   <h3 className="mb-1 font-semibold text-ink">
                     {event.type} · {lot.product}
                   </h3>
-                  <p className="mb-0 text-sm text-muted">
+                  <p className="mb-0 text-sm text-gray-700">
                     {event.actorName} ·{" "}
                     {event.actorRole ? roleLabels[event.actorRole] : "Rol no registrado"} ·{" "}
                     {event.organization}
                   </p>
                 </div>
-                <time className="text-xs text-muted" dateTime={event.recordedAt}>
+                <time className="text-xs text-gray-700" dateTime={event.recordedAt}>
                   Capturado:{" "}
                   {new Intl.DateTimeFormat("es-CO", {
                     dateStyle: "medium",
@@ -86,7 +86,7 @@ export function AuditDashboard({ records }: { records: LotRecord[] }) {
                 </time>
               </div>
               <p className="mt-3 mb-0 text-sm leading-6 text-ink">{event.details}</p>
-              <p className="mt-2 mb-0 text-xs text-muted">
+              <p className="mt-2 mb-0 text-xs text-gray-700">
                 Ocurrió:{" "}
                 {new Intl.DateTimeFormat("es-CO", {
                   dateStyle: "medium",
@@ -94,7 +94,7 @@ export function AuditDashboard({ records }: { records: LotRecord[] }) {
                 }).format(new Date(event.occurredAt))}
               </p>
               {event.evidenceSha256 && (
-                <p className="mt-2 mb-0 break-all font-mono text-[11px] text-muted">
+                <p className="mt-2 mb-0 break-all font-mono text-[11px] text-gray-700">
                   SHA-256 de evidencia: {event.evidenceSha256}
                 </p>
               )}
@@ -118,7 +118,7 @@ export function AuditDashboard({ records }: { records: LotRecord[] }) {
           );
         })}
         {entries.length === 0 && (
-          <li className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-muted">
+          <li className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-gray-700">
             Todavía no hay eventos para revisar.
           </li>
         )}

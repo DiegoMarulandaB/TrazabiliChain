@@ -13,6 +13,19 @@ Run the project checks with `pnpm lint`, `pnpm typecheck`, and `pnpm format:chec
 The generated TypeScript bindings are in `packages/hello_world` and can be built with
 `pnpm --filter hello_world build`.
 
+### Records dashboard authentication
+
+The `/registros` route uses Supabase Auth for email/password accounts and a six-digit email code
+after registration and password validation at sign-in. Set `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local`. In Supabase, enable email confirmation and
+configure both the **Confirm signup** and **Magic Link** email templates to display `{{ .Token }}`.
+The project URL must allow the local and deployed app URLs.
+
+Lot records and evidence are still stored in the browser's local storage; Supabase currently
+authenticates accounts but does not provide shared or server-protected lot storage. The OTP
+sequence gates this client-side demo; it is not a substitute for server-side authorization, RLS,
+or a second-factor flow enforced by protected application APIs.
+
 ## Project Structure
 
 This repository uses the recommended structure for a Soroban project:

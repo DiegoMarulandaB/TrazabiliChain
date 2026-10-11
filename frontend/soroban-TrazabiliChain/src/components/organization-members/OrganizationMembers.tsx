@@ -57,7 +57,7 @@ export function OrganizationMembers() {
       <h2 id="members-title" className="font-display text-2xl font-medium text-ink">
         Miembros y roles de demostración
       </h2>
-      <p className="mt-2 text-sm leading-6 text-muted">
+      <p className="mt-2 text-sm leading-6 text-gray-700">
         El directorio permite ensayar la asignación de responsabilidades. No verifica identidades ni
         controla permisos fuera de esta interfaz local.
       </p>
@@ -118,9 +118,9 @@ export function OrganizationMembers() {
       </p>
 
       <div className="mt-5 overflow-x-auto rounded-md border border-line bg-white">
-        <table className="w-full min-w-[36rem] text-left text-sm">
+        <table className="w-full min-w-xl text-left text-sm">
           <caption className="sr-only">Miembros locales y roles asignados</caption>
-          <thead className="border-b border-line bg-paper text-xs text-muted">
+          <thead className="border-b border-line bg-paper text-xs text-gray-700">
             <tr>
               <th scope="col" className="px-4 py-3 font-semibold">
                 Miembro
@@ -155,7 +155,7 @@ export function OrganizationMembers() {
             ))}
             {members.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted">
+                <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-700">
                   Todavía no hay miembros en el directorio local.
                 </td>
               </tr>

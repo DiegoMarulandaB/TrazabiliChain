@@ -90,7 +90,7 @@ export function ConsumerScanner() {
       <h2 id="consumer-scanner-title" className="font-display text-2xl font-medium text-ink">
         Consultar un lote
       </h2>
-      <p className="mt-2 text-sm leading-6 text-muted">
+      <p className="mt-2 text-sm leading-6 text-gray-700">
         Escanea el QR del producto con la cámara o escribe el identificador. El navegador pedirá
         permiso para usar la cámara.
       </p>

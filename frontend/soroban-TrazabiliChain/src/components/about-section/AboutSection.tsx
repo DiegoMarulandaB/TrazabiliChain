@@ -1,4 +1,4 @@
-import Link from "next/link";
+// import Link from "next/link";
 
 const capabilities = [
   {
@@ -37,13 +37,13 @@ export function AboutSection() {
           >
             Del origen al destino, cada lote tiene una historia. Hazla visible.
           </h2>
-          <p className="mb-4 max-w-prose text-sm leading-7 text-muted sm:text-base">
+          <p className="mb-4 max-w-prose text-base leading-7 text-gray-700 sm:text-base">
             TrazabiliChain conecta el origen de un producto, a las personas que participan en su
             recorrido y las evidencias asociadas. Así, productores, marcas y compradores pueden
             consultar qué se registró y cuándo, sin reconstruir la historia a partir de documentos
             dispersos.
           </p>
-          <p className="mb-7 max-w-prose text-sm leading-7 text-muted sm:text-base">
+          <p className="mb-7 max-w-prose text-base leading-7 text-gray-700 sm:text-base">
             Desde un código QR, un consumidor puede conocer el recorrido que se decidió compartir;
             los equipos de abastecimiento y auditoría pueden revisar los registros disponibles para
             tomar decisiones con más contexto.
@@ -64,7 +64,7 @@ export function AboutSection() {
                 <h3 className="mb-2 font-display text-xl font-medium text-ink">
                   {capability.title}
                 </h3>
-                <p className="mb-0 max-w-prose text-sm leading-6 text-muted">
+                <p className="mb-0 max-w-prose text-base leading-6 text-gray-700 ">
                   {capability.description}
                 </p>
               </div>
