@@ -41,11 +41,10 @@ Comandos disponibles:
 | `pnpm format`       | Aplica Prettier a los archivos incluidos en su configuración. |
 | `pnpm format:check` | Comprueba el formato sin modificar archivos.                  |
 
-Para publicar el sitio con su dominio definitivo, define `NEXT_PUBLIC_SITE_URL` antes de compilar:
+Sitio con su dominio definitivo, se define:
 
-```env
-NEXT_PUBLIC_SITE_URL=https://tu-dominio.example
-```
+NEXT_PUBLIC_SITE_URL= https://trazabilichain.vercel.app/
+
 
 El valor por defecto es `http://localhost:3000`, útil solo durante el desarrollo local.
 
@@ -53,12 +52,14 @@ El valor por defecto es `http://localhost:3000`, útil solo durante el desarroll
 
 | Ruta o archivo                                                | Responsabilidad                                                         |
 | ------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `src/app/page.tsx`                                            | Página principal; compone header, registros, sección Sobre y footer.    |
+| `src/app/page.tsx`                                            | Página principal; compone header, hero, sección Sobre y footer.         |
+| `src/app/registros/page.tsx`                                  | Ruta del dashboard; conserva comentado el acceso Supabase.              |
 | `src/app/lote/[id]/page.tsx`                                  | Ruta dinámica de consulta de un lote por identificador.                 |
 | `src/app/layout.tsx`                                          | Layout raíz, idioma, metadata general y SplashScreen.                   |
 | `src/app/opengraph-image.tsx`                                 | Genera una imagen social de 1200 × 630 píxeles mediante `next/og`.      |
 | `src/components/header/Header.tsx`                            | Navegación adaptable y enlace para saltar al contenido.                 |
-| `src/components/records-panel/RecordsPanel.tsx`               | Formulario, validación nativa, historial y creación de lotes.           |
+| `src/components/records-panel/RecordsPanel.tsx`               | Dashboard, validación, historial y creación de lotes.                   |
+| `src/components/records-auth/RecordsAuth.tsx`                 | Formulario Supabase conservado; su render está comentado por ahora.     |
 | `src/components/lot-sharing/LotSharing.tsx`                   | QR y opciones para compartir el enlace.                                 |
 | `src/components/public-lot/PublicLotPage.tsx`                 | Consulta local del lote o aviso de que no está disponible.              |
 | `src/components/event-form/EventForm.tsx`                     | Registro de hitos por parte de actores de la cadena.                    |
@@ -139,7 +140,7 @@ Estas cabeceras son defensa en profundidad y no sustituyen autenticación, autor
 
 ## 11. Límites del prototipo
 
-- No hay API, base de datos remota, inicio de sesión ni roles autenticados. Sí existen pantallas de roles de demostración, pero no son una capa de autorización.
+- No hay API, base de datos remota ni roles autenticados. El formulario Supabase se conserva en `RecordsAuth.tsx`, pero su render está comentado en `/registros` hasta que el equipo disponga de las llaves.
 - Los perfiles y pantallas se simulan en el cliente. Ocultar formularios por rol no constituye autorización; cualquier persona con acceso al navegador puede cambiar de perfil o alterar `localStorage`.
 - El navegador es la fuente de persistencia: lotes, eventos, metadatos de certificados y miembros usan `localStorage`; los documentos seleccionados usan IndexedDB. Borrar los datos del sitio elimina estos registros y evidencias.
 - La hora de creación proviene del reloj del dispositivo y no es un sello de tiempo confiable.
@@ -148,6 +149,44 @@ Estas cabeceras son defensa en profundidad y no sustituyen autenticación, autor
 - Los enlaces de redes sociales del footer son ejemplos y no perfiles oficiales.
 - No se deben registrar datos personales, documentos privados ni información sensible en esta demo.
 
-Para permitir consultas reales desde otros dispositivos, el siguiente paso es integrar persistencia del lado servidor, autenticación y autorización por organización. La ruta pública deberá exponer únicamente los campos autorizados; el cliente no puede ser la autoridad de seguridad. También queda pendiente decidir la opción de contrato (A o B) y documentar por qué se elige antes de integrar el anclaje Soroban.
+Para permitir consultas reales desde otros dispositivos, el siguiente paso es integrar persistencia del lado servidor, autenticación y autorización por organización. La ruta pública deberá exponer únicamente los campos autorizados; el cliente no puede ser la autoridad de seguridad.
 
-Nota: queda faltando la opción de contratos se eligió (A o B) y por qué. Ya que esto requiero verlo en la otra clase o seguir investigando para implementarlo
+## 12. Front construido
+
+La portada presenta el propósito de TrazabiliChain y ofrece dos accesos al flujo operativo: el enlace **Registro** del header y el botón **Explorar Trazabilidad** del hero. Ambos navegan dentro de la misma pestaña hacia `/registros`, sin abrir una ventana nueva. La vista tiene una transición de entrada breve y respeta la preferencia de movimiento reducido del sistema. El dashboard está separado de la portada y comparte el header y el footer del sitio.
+
+La pantalla principal del flujo es el panel de trazabilidad. Su encabezado muestra el total de registros y tres métricas calculadas desde los datos disponibles: lotes, eventos y certificados. Debajo presenta el perfil de trabajo y las acciones correspondientes. El selector permite recorrer los perfiles de productor, actor de la cadena, certificador, administrador de organización, comprador B2B, auditor y consumidor. Los perfiles son demostrativos: cambiar el selector cambia la interfaz, pero no concede permisos ni confirma la identidad de una persona.
+
+El flujo de productor implementa la historia prioritaria del Blueprint: registrar el origen y las características de un lote. El formulario solicita producto, características, ubicación de origen, fecha y organización responsable. Todos los campos son obligatorios; además de la validación del navegador, se rechazan los valores que contienen solamente espacios. Al guardar se genera un UUID, se captura la hora del dispositivo y el lote se añade al historial local. La lista presenta su origen, fechas y organización; también permite consultar eventos y certificados asociados y compartir una URL mediante código QR.
+
+Los demás perfiles conectan con las historias siguientes del MVP. El actor de cadena selecciona un lote y registra un tipo de evento, fecha y detalle, con un archivo de evidencia opcional. El certificador asocia nombre, emisor, número, fechas y archivo; se calcula una huella SHA-256 para comparar la evidencia, sin afirmar que el emisor o certificado sean legítimos. El administrador gestiona un directorio de miembros de demostración. El comprador B2B busca lotes y puede filtrar certificados según su vigencia declarada. El auditor revisa eventos ordenados y alertas básicas de consistencia, que no equivalen a una auditoría ni a una detección de fraude.
+
+El perfil consumidor incluye el scanner solicitado. Puede activar la cámara para leer un QR o consultar manualmente con un identificador o URL del mismo origen. La ficha `/lote/{id}` presenta los datos públicos del lote, su cronología y evidencias locales cuando el registro existe en ese navegador. La entrada manual permite continuar si no hay cámara o si el usuario no concede permiso. El QR solo codifica la dirección y el identificador, no los campos del lote.
+
+Estos flujos cubren a nivel de interfaz las historias priorizadas en el Blueprint: origen, eventos, certificados, consulta del consumidor, administración de miembros, búsqueda B2B y revisión de auditoría. Se usan etiquetas asociadas a los campos, estructura semántica, indicadores de estado accesibles, foco visible y navegación por teclado. Los errores de alta se anuncian; los formularios rechazan campos requeridos incompletos. La animación de entrada y la animación del registro nuevo se desactivan cuando el usuario prefiere movimiento reducido.
+
+La persistencia aún no alcanza el MVP multiusuario del Blueprint: los lotes y miembros se guardan en `localStorage`, mientras que los archivos de evidencia se guardan en IndexedDB. No hay sincronización con otros dispositivos, ni el frontend invoca Stellar o el contrato Soroban de ejemplo. El formulario de correo, contraseña y código OTP se conserva en `RecordsAuth.tsx`, pero la llamada está comentada en `/registros`; hoy el dashboard abre directamente, sin credenciales. No hay despliegue público confirmado. Durante el desarrollo local, el frontend se puede revisar en [http://localhost:3000/registros](http://localhost:3000/registros) después de iniciar `pnpm dev` desde `frontend/soroban-TrazabiliChain`; el puerto puede variar si ya está ocupado.
+
+## 13. Decisión técnica
+
+La decisión entre **A. contrato propio** y **B. solución existente del ecosistema Stellar** queda pendiente de investigación y acuerdo del equipo. El Blueprint propone usar Stellar como una capa de verificación: el backend conservaría los datos operativos y documentos, y la red podría guardar referencias criptográficas de lotes, eventos o certificados. También menciona Soroban y Stellar RPC como posibilidades, pero no compara una implementación propia con un servicio existente ni selecciona una de ellas. El frontend de esta entrega no envía transacciones y no se escribió lógica de producto para un contrato.
+
+La opción A podría ser apropiada si el MVP necesita reglas de negocio propias para asociar un identificador de lote con hashes y tipos de evento, o necesita eventos de contrato consultables por varias organizaciones. Antes de adoptarla habría que precisar esas reglas, la autorización, la actualización de referencias y los costos de recursos e invocaciones. La opción B podría reducir desarrollo y mantenimiento si una plataforma disponible en Stellar resuelve el anclaje y la verificación con garantías, disponibilidad y costos compatibles con el flujo piloto. Para elegirla se deben identificar servicios concretos y revisar sus límites, dependencias y controles.
+
+Por tanto, en esta entrega no se afirma que A o B esté elegida, y ninguna de las dos se descarta formalmente. La siguiente etapa debe comparar ambas contra un caso piloto, definir quién registra y verifica cada referencia, qué información se publica y quién asume el costo de las transacciones. El Blueprint sí deja fuera del MVP la tokenización financiera de certificados: un token no prueba que un certificado sea legítimo ni que corresponda al lote. Esa exclusión no resuelve la decisión A/B; evita añadir una función que no valida la hipótesis central de trazabilidad.
+
+## 14. Participación del equipo
+
+| Integrante                                | Usuario de GitHub                                      | Aporte o responsabilidad verificable                                                            |
+| ----------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Diego Marulanda B.                        | [@DiegoMarulandaB](https://github.com/DiegoMarulandaB) | Implementación del frontend de trazabilidad y actualización de la documentación del entregable.
+
+ Rol general “Full stack”, sin distribuir responsabilidades individuales.
+
+## 15. Bloqueos y siguiente paso
+
+- **Supabase:** el equipo aún no dispone de las llaves. El acceso permanece comentado; para reactivarlo se deben configurar las credenciales, probar el envío de OTP y completar autorización y persistencia del lado servidor.
+- **Decisión Stellar A/B:** todavía no se ha seleccionado una solución del ecosistema ni un contrato propio. Falta comparar alternativas concretas con las necesidades del MVP y acordar qué dato se anclaría.
+- **Participación:** faltan los usuarios de GitHub y aportes individuales del resto del equipo.
+
+El próximo paso es completar la evaluación de que tipo de contrato inteligente se va a implementar. Después se podrá integrar autenticación y almacenamiento compartido con controles de acceso.
