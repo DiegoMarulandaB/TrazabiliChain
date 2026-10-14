@@ -5,6 +5,10 @@ target
 .soroban
 .stellar
 
+# Environment variables
+.env*
+.env.example
+
 # Next.js
 .next/
 /out/

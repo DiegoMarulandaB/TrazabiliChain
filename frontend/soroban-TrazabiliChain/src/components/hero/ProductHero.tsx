@@ -8,17 +8,15 @@ export interface ProductHeroProps {
   description?: string;
   primaryActionText?: string;
   secondaryActionText?: string;
-  onSecondaryClick?: () => void;
 }
 
 export const ProductHero: React.FC<ProductHeroProps> = ({
-  badgeText = "Trazabilidad Verificable de Extremo a Extremo",
-  title = "Conecta el origen, las personas y las evidencias",
-  highlightedTitle = "de cada producto en tiempo real.",
-  description = "Integra a productores, marcas y compradores en una sola fuente de verdad. Consulta todo el recorrido del producto sin depender de documentos dispersos.",
-  primaryActionText = "Explorar Trazabilidad",
-  secondaryActionText = "Ver Demostración",
-  onSecondaryClick,
+  badgeText = "Del origen a la tienda, con información clara",
+  title = "Descubre de dónde viene cada lote",
+  highlightedTitle = "y qué pasó en su recorrido.",
+  description = "Productores, transportistas y marcas reúnen los datos y documentos de cada etapa. Escanea el código QR para consultar la historia que la organización comparte.",
+  primaryActionText = "Consultar lotes",
+  secondaryActionText = "Cómo funciona",
 }) => {
   return (
     <section className="relative overflow-hidden bg-paper py-20 lg:py-32 text-ink">
@@ -56,26 +54,26 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
               >
                 {primaryActionText}
               </Link>
-              <button
-                onClick={onSecondaryClick}
-                className="px-7 py-3.5 rounded-md bg-surface text-ink border border-line font-medium shadow-sm hover:bg-paper transition-all duration-200 cursor-pointer focus-visible:outline-3 focus-visible:outline-accent focus-visible:outline-offset-4"
+              <Link
+                href="#sobre"
+                className="inline-flex items-center justify-center px-7 py-3.5 rounded-md bg-surface text-ink border border-line font-medium shadow-sm hover:bg-paper transition-all duration-200 focus-visible:outline-3 focus-visible:outline-accent focus-visible:outline-offset-4"
               >
                 {secondaryActionText}
-              </button>
+              </Link>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-12 pt-8 border-t border-line w-full max-w-xl">
               <div>
-                <p className="font-display text-xl sm:text-base font-bold text-ink">100%</p>
-                <p className="text-sm sm:text-sm text-gray-700">Auditable</p>
-              </div>
-              <div>
                 <p className="font-display text-xl sm:text-base font-bold text-ink">Origen</p>
-                <p className="text-sm sm:text-sm text-gray-700 ">Certificado</p>
+                <p className="text-sm text-gray-700">de cada lote</p>
               </div>
               <div>
-                <p className="font-display text-xl sm:text-base font-bold text-ink">Tiempo Real</p>
-                <p className="text-sm sm:text-sm text-gray-700">Actualizaciones</p>
+                <p className="font-display text-xl sm:text-base font-bold text-ink">Recorrido</p>
+                <p className="text-sm text-gray-700">por etapas</p>
+              </div>
+              <div>
+                <p className="font-display text-xl sm:text-base font-bold text-ink">Evidencia</p>
+                <p className="text-sm text-gray-700">asociada al lote</p>
               </div>
             </div>
           </div>
@@ -84,10 +82,10 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
             <div className="relative p-6 sm:p-8 rounded-md bg-surface border border-line shadow-xl shadow-ink/5 backdrop-blur-xl">
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-line">
                 <span className="text-xs font-semibold uppercase tracking-wider text-gray-700 ">
-                  Lote Activo #TRZ-2026-89
+                  Ejemplo de recorrido
                 </span>
                 <span className="px-2.5 py-1 rounded-md bg-accent-soft text-accent text-xs font-medium">
-                  Verificado
+                  Lote de café
                 </span>
               </div>
 
@@ -97,9 +95,9 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
                     1
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Origen Agrícola / Producción</p>
+                    <p className="text-sm font-semibold text-ink">Origen del producto</p>
                     <p className="text-sm text-gray-700">
-                      Registrado por Finca El Paraíso • Antioquia
+                      Finca, municipio y organización responsable
                     </p>
                   </div>
                 </div>
@@ -109,9 +107,9 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
                     2
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Proceso y Transformación</p>
+                    <p className="text-sm font-semibold text-ink">Transporte y transformación</p>
                     <p className="text-sm text-gray-700 ">
-                      Evidencia y control de calidad usando blockchain
+                      Hitos con fecha, responsable y evidencia disponible
                     </p>
                   </div>
                 </div>
@@ -121,9 +119,9 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
                     3
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-ink">Distribución y Destino</p>
+                    <p className="text-sm font-semibold text-ink">Consulta por QR</p>
                     <p className="text-sm text-gray-700">
-                      Disponible para consulta de compradores finales
+                      Revisa la información que la organización decidió compartir
                     </p>
                   </div>
                 </div>
@@ -131,7 +129,7 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
 
               <div className="mt-6 pt-4 text-center">
                 <span className="text-xs text-gray-700 italic">
-                  Trazabilidad inalterable respaldada por evidencias digitales.
+                  Consulta los datos y sus evidencias sin confundir registro con certificación.
                 </span>
               </div>
             </div>

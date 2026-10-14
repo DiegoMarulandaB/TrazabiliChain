@@ -1,14 +1,11 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, EnvelopeSimple, LockKey, SpinnerGap } from "@phosphor-icons/react";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { RecordsPanel } from "@/components/records-panel/RecordsPanel";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase: SupabaseClient | null =
-  supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+const supabase = getSupabaseBrowserClient();
 
 type AccessStage = "checking" | "credentials" | "verification" | "dashboard";
 type AuthMode = "signIn" | "signUp";

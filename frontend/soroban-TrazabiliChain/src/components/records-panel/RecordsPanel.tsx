@@ -6,14 +6,19 @@ import { useRef, useState, type FormEvent } from "react";
 import { LotSharing } from "@/components/lot-sharing/LotSharing";
 import { EventForm } from "@/components/event-form/EventForm";
 import { CertificateForm } from "@/components/certificate-form/CertificateForm";
+import { TrustlessWorkEscrow } from "@/components/escrow/TrustlessWorkEscrow";
 import {
   OrganizationMembers,
   roleLabels,
 } from "@/components/organization-members/OrganizationMembers";
+import { TraceabilityActorAccess } from "@/components/organization-members/TraceabilityActorAccess";
 import { BuyerDashboard } from "@/components/buyer-dashboard/BuyerDashboard";
 import { AuditDashboard } from "@/components/audit-dashboard/AuditDashboard";
 import { ConsumerScanner } from "@/components/consumer-scanner/ConsumerScanner";
 import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
+import { TraceabilityAnchor } from "@/components/traceability-anchor/TraceabilityAnchor";
+import { BorderBeamFrame } from "@/components/ui/motion/BorderBeamFrame";
+import { WalletConnect } from "@/components/wallet/WalletConnect";
 import {
   demoRoles,
   saveLotRecord,
@@ -163,26 +168,33 @@ export function RecordsPanel() {
         </span>
       </div>
 
-      <dl className="my-6 grid grid-cols-3 divide-x divide-line border-y border-line bg-white">
-        <div className="px-3 py-4 sm:px-5 sm:py-5">
-          <dd className="mb-1 font-display text-2xl font-medium text-ink sm:text-3xl">
-            {records.length}
-          </dd>
-          <dt className="text-xs leading-4 text-gray-700 sm:text-sm">Lotes registrados</dt>
-        </div>
-        <div className="px-3 py-4 sm:px-5 sm:py-5">
-          <dd className="mb-1 font-display text-2xl font-medium text-ink sm:text-3xl">
-            {eventCount}
-          </dd>
-          <dt className="text-xs leading-4 text-gray-700 sm:text-sm">Eventos asociados</dt>
-        </div>
-        <div className="px-3 py-4 sm:px-5 sm:py-5">
-          <dd className="mb-1 font-display text-2xl font-medium text-ink sm:text-3xl">
-            {certificateCount}
-          </dd>
-          <dt className="text-xs leading-4 text-gray-700 sm:text-sm">Certificados asociados</dt>
-        </div>
-      </dl>
+      <div className="my-5 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-5">
+        <p className="mb-0 text-sm text-gray-700">Red para pruebas: Stellar Testnet</p>
+        <WalletConnect />
+      </div>
+
+      <BorderBeamFrame>
+        <dl className="my-6 grid grid-cols-3 divide-x divide-line border-y border-line bg-white">
+          <div className="px-3 py-4 sm:px-5 sm:py-5">
+            <dd className="mb-1 font-display text-2xl font-medium text-ink sm:text-3xl">
+              {records.length}
+            </dd>
+            <dt className="text-xs leading-4 text-gray-700 sm:text-sm">Lotes registrados</dt>
+          </div>
+          <div className="px-3 py-4 sm:px-5 sm:py-5">
+            <dd className="mb-1 font-display text-2xl font-medium text-ink sm:text-3xl">
+              {eventCount}
+            </dd>
+            <dt className="text-xs leading-4 text-gray-700 sm:text-sm">Eventos asociados</dt>
+          </div>
+          <div className="px-3 py-4 sm:px-5 sm:py-5">
+            <dd className="mb-1 font-display text-2xl font-medium text-ink sm:text-3xl">
+              {certificateCount}
+            </dd>
+            <dt className="text-xs leading-4 text-gray-700 sm:text-sm">Certificados asociados</dt>
+          </div>
+        </dl>
+      </BorderBeamFrame>
 
       <section
         aria-labelledby="demo-profile-title"
@@ -399,11 +411,13 @@ export function RecordsPanel() {
         {role === "organizationAdmin" && (
           <section data-enter className="lg:col-span-2">
             <OrganizationMembers />
+            <TraceabilityActorAccess />
           </section>
         )}
         {role === "b2bBuyer" && (
           <section data-enter className="lg:col-span-2">
             <BuyerDashboard records={records} />
+            <TrustlessWorkEscrow records={records} />
           </section>
         )}
         {role === "auditor" && (
@@ -570,6 +584,7 @@ export function RecordsPanel() {
                       </section>
                     )}
                     <LotSharing record={record} />
+                    <TraceabilityAnchor record={record} />
                   </li>
                 ))}
               </ol>

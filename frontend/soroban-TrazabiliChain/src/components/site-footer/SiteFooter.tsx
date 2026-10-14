@@ -20,9 +20,13 @@ const socialLinks = [
 
 export function SiteFooter() {
   return (
-    <footer id="contacto" aria-labelledby="contact-title" className="scroll-mt-8 bg-ink text-white">
-      <div className="mx-auto grid w-[min(100%-2.5rem,70rem)] gap-10 py-10 sm:w-[min(100%-3rem,70rem)] sm:grid-cols-[1fr_auto] sm:items-end sm:py-12">
-        <div>
+    <footer
+      id="contacto"
+      aria-labelledby="contact-title"
+      className="mt-auto w-full scroll-mt-8 bg-ink text-white"
+    >
+      <div className="mx-auto grid w-[min(100%-2rem,70rem)] min-w-0 gap-8 py-8 sm:w-[min(100%-3rem,70rem)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start sm:gap-10 sm:py-12">
+        <div className="min-w-0">
           <p className="mb-2 text-[11px] font-bold text-[#9fd0bc]">SIGAMOS LA CONVERSACIÓN</p>
           <h2 id="contact-title" className="mb-3 font-display text-2xl font-medium">
             Contacto
@@ -33,9 +37,9 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <nav aria-label="Redes sociales">
-            <ul className="m-0 flex list-none flex-wrap gap-3 p-0">
+            <ul className="m-0 flex list-none flex-wrap gap-2 p-0 sm:justify-end">
               {socialLinks.map(({ href, label, Icon }) => (
                 <li key={label}>
                   <a
@@ -52,16 +56,18 @@ export function SiteFooter() {
               ))}
             </ul>
           </nav>
-          <p className="mt-3 mb-0 text-xs text-white/55">
+          <p className="mt-3 mb-0 max-w-sm text-xs leading-5 text-white/55 sm:ml-auto sm:text-right">
             Enlaces de demostración; los perfiles oficiales están pendientes.
           </p>
         </div>
       </div>
 
       <div className="border-t border-white/15">
-        <div className="mx-auto flex w-[min(100%-2.5rem,70rem)] flex-wrap justify-between gap-2 py-4 text-xs text-white/60 sm:w-[min(100%-3rem,70rem)]">
-          <span>TrazabiliChain</span>
-          <span>Una huella verifica integridad, no la veracidad inicial del dato.</span>
+        <div className="mx-auto flex w-[min(100%-2rem,70rem)] min-w-0 flex-col gap-2 py-4 text-xs leading-5 text-white/60 sm:w-[min(100%-3rem,70rem)] sm:flex-row sm:items-start sm:justify-between">
+          <span className="shrink-0">TrazabiliChain</span>
+          <span className="max-w-prose sm:text-right">
+            Una huella verifica integridad, no la veracidad inicial del dato.
+          </span>
         </div>
       </div>
     </footer>

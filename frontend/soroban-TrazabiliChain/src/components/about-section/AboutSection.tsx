@@ -3,21 +3,21 @@
 const capabilities = [
   {
     number: "01",
-    title: "Un origen identificable",
+    title: "Conoce el origen",
     description:
-      "Cada lote comienza con sus datos esenciales: producto, ubicación y organización responsable.",
+      "Consulta el producto, el lugar donde se registró y la organización responsable del lote.",
   },
   {
     number: "02",
-    title: "Un recorrido con contexto",
+    title: "Sigue cada etapa",
     description:
-      "Los actores autorizados pueden registrar hitos como recepción, despacho, transformación o entrega.",
+      "Productores y operadores pueden añadir fechas y detalles de recepción, transporte, transformación o entrega.",
   },
   {
     number: "03",
-    title: "Evidencia vinculada al lote",
+    title: "Revisa la evidencia",
     description:
-      "Certificados y documentos pueden asociarse al registro, manteniendo los archivos fuera de la cadena.",
+      "Los documentos se asocian al lote y se guardan fuera de la cadena; su emisor debe validarse por separado.",
   },
 ];
 
@@ -30,23 +30,24 @@ export function AboutSection() {
     >
       <div className="grid gap-9 lg:grid-cols-[minmax(0,0.9fr)_minmax(22rem,1.1fr)] lg:gap-16">
         <div>
-          <p className="mb-3 text-[11px] font-bold text-accent">TRAZABILIDAD CON CONTEXTO</p>
+          <p className="mb-3 text-[11px] font-bold text-accent">
+            INFORMACIÓN CLARA PARA CADA ETAPA
+          </p>
           <h2
             id="about-title"
             className="mb-5 max-w-xl font-display text-3xl font-medium leading-tight text-ink sm:text-4xl"
           >
-            Del origen al destino, cada lote tiene una historia. Hazla visible.
+            Sigue el recorrido de un producto, del origen a la entrega.
           </h2>
           <p className="mb-4 max-w-prose text-base leading-7 text-gray-700 sm:text-base">
-            TrazabiliChain conecta el origen de un producto, a las personas que participan en su
-            recorrido y las evidencias asociadas. Así, productores, marcas y compradores pueden
-            consultar qué se registró y cuándo, sin reconstruir la historia a partir de documentos
-            dispersos.
+            TrazabiliChain reúne en una ficha los datos de origen, los cambios de custodia y las
+            evidencias que comparten productores, transportistas, certificadores y marcas. Cada
+            registro muestra quién aportó la información y cuándo se añadió.
           </p>
           <p className="mb-7 max-w-prose text-base leading-7 text-gray-700 sm:text-base">
-            Desde un código QR, un consumidor puede conocer el recorrido que se decidió compartir;
-            los equipos de abastecimiento y auditoría pueden revisar los registros disponibles para
-            tomar decisiones con más contexto.
+            El consumidor puede abrir la información pública con un código QR. Los equipos de
+            abastecimiento y auditoría pueden revisar el historial disponible antes de tomar una
+            decisión.
           </p>
           {/* <Link
             href="/#registro"
@@ -78,13 +79,12 @@ export function AboutSection() {
         className="mt-10 grid gap-3 border-l-2 border-accent bg-accent-soft/60 px-5 py-5 sm:grid-cols-[12rem_1fr] sm:gap-8 sm:px-7"
       >
         <h3 id="integrity-title" className="mb-0 font-display text-lg font-medium text-ink">
-          Integridad, con transparencia
+          Qué demuestra el registro
         </h3>
         <p className="mb-0 max-w-3xl text-sm leading-6 text-ink">
-          Una huella en Stellar puede ayudar a detectar cambios posteriores al registro; no
-          demuestra por sí sola que el dato inicial sea verdadero ni que un certificado sea
-          legítimo. Por eso, la trazabilidad también depende de actores identificados y procesos
-          adecuados para validar la evidencia.
+          Una huella digital permite comparar la información con la que se registró en Stellar y
+          detectar cambios posteriores. No prueba que el dato original sea verdadero ni que un
+          certificado sea legítimo: eso requiere validar al emisor y la evidencia.
         </p>
       </aside>
     </section>

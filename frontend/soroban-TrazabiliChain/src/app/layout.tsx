@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { StellarWalletProvider } from "@/components/providers/StellarWalletProvider";
 import { SplashScreen } from "@/components/splash-screen/SplashScreen";
+import { Toaster } from "@/components/ui/feedback/Toaster";
 import "./globals.css";
 
 // "http://localhost:3000";
@@ -65,7 +67,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="es" data-scroll-behavior="smooth">
       <body className="font-sans antialiased">
-        <SplashScreen>{children}</SplashScreen>
+        <StellarWalletProvider>
+          <Toaster />
+          <SplashScreen>{children}</SplashScreen>
+        </StellarWalletProvider>
       </body>
     </html>
   );

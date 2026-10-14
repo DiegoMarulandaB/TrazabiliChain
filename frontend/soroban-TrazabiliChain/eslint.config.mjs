@@ -13,6 +13,7 @@ export default defineConfig([
     "coverage/**",
     "next-env.d.ts",
     "packages/hello_world/**",
+    "packages/traceability_registry/**",
   ]),
   // Bloque con reglas y opciones recomendadas adicionales
   {
@@ -20,10 +21,18 @@ export default defineConfig([
       reportUnusedDisableDirectives: "warn", // Advierte sobre comentarios eslint-disable que ya no son necesarios
     },
     rules: {
-      // Buenas prácticas recomendadas para TypeScript y React
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports", fixStyle: "inline-type-imports" },
+      ],
+      "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
       ],
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
