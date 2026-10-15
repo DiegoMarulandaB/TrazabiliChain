@@ -20,20 +20,16 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
 }) => {
   return (
     <section className="relative overflow-hidden bg-paper py-20 lg:py-32 text-ink">
-      {/* Elementos decorativos de fondo (Estética limpia / profundidad sutil) */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-linear-to-b from-accent-soft/40 to-transparent pointer-events-none blur-3xl -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-          {/* Columna de Texto e Información Principal */}
           <div className="lg:col-span-7 flex flex-col items-start text-left">
-            {/* Badge superior */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent-soft text-accent text-xs sm:text-sm font-medium mb-6 border border-line shadow-sm">
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
               {badgeText}
             </div>
 
-            {/* Título Principal */}
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight text-ink font-normal leading-[1.1] mb-6">
               {title}{" "}
               <span className="text-accent block sm:inline font-semibold mt-1">
@@ -41,12 +37,10 @@ export const ProductHero: React.FC<ProductHeroProps> = ({
               </span>
             </h1>
 
-            {/* Descripción */}
             <p className="font-sans text-gray-700  text-lg sm:text-xl leading-relaxed max-w-2xl mb-8">
               {description}
             </p>
 
-            {/* Botones de Acción */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
               <Link
                 href="/registros"

@@ -10,6 +10,7 @@ import {
   ShareNetwork,
   XLogo,
 } from "@phosphor-icons/react/dist/ssr";
+import { toast } from "sonner";
 import type { LotRecord } from "@/lib/lots/lot-storage";
 
 const subscribeToOrigin = (notify: () => void) => {
@@ -17,7 +18,17 @@ const subscribeToOrigin = (notify: () => void) => {
   return () => window.removeEventListener("popstate", notify);
 };
 
-const getOrigin = () => window.location.origin;
+const getOrigin = () => {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl) {
+    try {
+      return new URL(siteUrl).origin;
+    } catch {
+      return window.location.origin;
+    }
+  }
+  return window.location.origin;
+};
 const getServerOrigin = () => "";
 
 function buildShareUrl(origin: string, id: string) {
@@ -70,18 +81,20 @@ export function LotSharing({ record }: { record: LotRecord }) {
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setShareStatus(
+      const message =
         destination === "instagram"
           ? "Enlace copiado. Abre Instagram y pégalo donde quieras compartirlo."
-          : "Enlace copiado. Pégalo en la publicación que quieras compartir.",
-      );
+          : "Enlace copiado. Pégalo en la publicación que quieras compartir.";
+      setShareStatus(message);
+      toast.success(message);
       setShowManualCopy(false);
       closeShareMenu();
     } catch {
       setShowManualCopy(true);
-      setShareStatus(
-        "No se pudo copiar automáticamente. Copia el enlace desde el campo siguiente.",
-      );
+      const message =
+        "No se pudo copiar automáticamente. Copia el enlace desde el campo siguiente.";
+      setShareStatus(message);
+      toast.error(message);
     }
   }
 
@@ -89,7 +102,15 @@ export function LotSharing({ record }: { record: LotRecord }) {
     return <p className="mb-0 text-xs text-gray-700">Preparando el enlace del QR…</p>;
   }
 
-  const emailUrl = `mailto:?subject=${encodeURIComponent(`TrazabiliChain · ${record.product}`)}&body=${encodeURIComponent(`${shareText}: ${shareUrl}\n\nEnlace de demostración local.`)}`;
+  if (!record.isPublic) {
+    return (
+      <p className="mt-5 mb-0 border-t border-line pt-4 text-xs leading-5 text-gray-700">
+        La ficha de este lote es privada. Activa su publicación para generar un QR consultable.
+      </p>
+    );
+  }
+
+  const emailUrl = `mailto:?subject=${encodeURIComponent(`TrazabiliChain · ${record.product}`)}&body=${encodeURIComponent(`${shareText}: ${shareUrl}\n\nFicha pública de consulta.`)}`;
   const xUrl = `https://x.com/intent/post?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
   const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
 
@@ -102,7 +123,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
           level="H"
           marginSize={2}
           title={`Código QR del lote ${record.product}`}
-          aria-label={`Código QR con el enlace público de demostración para el lote ${record.product}`}
+          aria-label={`Código QR con el enlace público de consulta para el lote ${record.product}`}
         />
       </div>
 
@@ -190,8 +211,8 @@ export function LotSharing({ record }: { record: LotRecord }) {
           </div>
         )}
         <p className="mt-3 mb-0 text-xs leading-5 text-gray-700">
-          El QR solo contiene el identificador aleatorio y el enlace, no los datos del lote. En esta
-          demo el destino funciona únicamente en este navegador.
+          El QR contiene el enlace público de consulta. La ficha muestra datos declarados por la
+          organización y sus huellas; no prueba que el producto físico corresponda al registro.
         </p>
         <p className="mt-2 mb-0 min-h-5 text-xs text-accent" role="status" aria-live="polite">
           {shareStatus}

@@ -1,5 +1,3 @@
-// import Link from "next/link";
-
 const capabilities = [
   {
     number: "01",
@@ -49,12 +47,6 @@ export function AboutSection() {
             abastecimiento y auditoría pueden revisar el historial disponible antes de tomar una
             decisión.
           </p>
-          {/* <Link
-            href="/#registro"
-            className="inline-flex min-h-11 items-center rounded-md bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-[#125746] focus-visible:outline-offset-2"
-          >
-            Explorar los registros
-          </Link> */}
         </div>
 
         <div className="grid content-start divide-y divide-line border-y border-line">

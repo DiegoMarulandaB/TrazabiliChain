@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useSyncExternalStore } from "react";
-import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
-import { useLotRecords } from "@/lib/lots/lot-storage";
+import { getPublicLotRecord, type LotRecord } from "@/lib/lots/lot-storage";
 
 const subscribeToHydration = () => () => {};
 const getHydratedSnapshot = () => true;
@@ -24,8 +23,25 @@ export function PublicLotPage({ id }: { id: string }) {
     getHydratedSnapshot,
     getServerHydrationSnapshot,
   );
-  const records = useLotRecords();
-  const record = records.find((item) => item.id === id);
+  const [loadedRecord, setLoadedRecord] = useState<{
+    id: string;
+    record: LotRecord | null;
+  } | null>(null);
+  const isLoading = loadedRecord?.id !== id;
+  const record = loadedRecord?.id === id ? loadedRecord.record : null;
+  const displayedEvents = record?.events.slice(0, 5) ?? [];
+
+  useEffect(() => {
+    let isMounted = true;
+    void getPublicLotRecord(id).then((publicRecord) => {
+      if (isMounted) {
+        setLoadedRecord({ id, record: publicRecord });
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
 
   return (
     <main className="mx-auto min-h-svh w-[min(100%-2.5rem,48rem)] py-12 sm:py-20">
@@ -33,13 +49,13 @@ export function PublicLotPage({ id }: { id: string }) {
         Volver a TrazabiliChain
       </Link>
 
-      {!hydrated ? (
+      {!hydrated || isLoading ? (
         <p className="mt-10 text-sm text-gray-700" role="status">
-          Consultando registro local…
+          Consultando ficha pública…
         </p>
       ) : record ? (
         <article className="mt-8 rounded-md border border-line bg-white p-5 sm:p-8">
-          <p className="mb-2 text-[11px] font-bold text-accent">REGISTRO DE DEMOSTRACIÓN</p>
+          <p className="mb-2 text-[11px] font-bold text-accent">FICHA PÚBLICA · DATOS DECLARADOS</p>
           <h1 className="mb-6 font-display text-3xl font-medium text-ink">{record.product}</h1>
           <dl className="grid gap-5 sm:grid-cols-2">
             <div>
@@ -69,6 +85,12 @@ export function PublicLotPage({ id }: { id: string }) {
               <dd className="mt-1 text-sm text-ink">{record.organization}</dd>
             </div>
             <div>
+              <dt className="text-xs text-gray-700">Registrado por</dt>
+              <dd className="mt-1 text-sm text-ink">
+                {record.createdByRole ? roleLabels[record.createdByRole] : record.createdBy}
+              </dd>
+            </div>
+            <div>
               <dt className="text-xs text-gray-700">Creado</dt>
               <dd className="mt-1 text-sm text-ink">
                 <time dateTime={record.createdAt}>{formatDate(record.createdAt, true)}</time>
@@ -79,6 +101,30 @@ export function PublicLotPage({ id }: { id: string }) {
             <h2 id="public-events-title" className="font-display text-xl font-medium text-ink">
               Recorrido registrado
             </h2>
+            <div className="mt-4 flex items-center gap-3">
+              <svg
+                viewBox="0 0 320 40"
+                className="h-10 w-full max-w-md text-accent"
+                role="img"
+                aria-label={`Trazabilidad visual: origen, ${record.events.length} eventos y consulta pública`}
+              >
+                <path d="M16 20H304" fill="none" stroke="currentColor" strokeWidth="2" />
+                <circle cx="16" cy="20" r="7" fill="currentColor" />
+                {displayedEvents.map((event, index) => (
+                  <circle
+                    key={event.id}
+                    cx={16 + ((index + 1) * 288) / (displayedEvents.length + 1)}
+                    cy="20"
+                    r="5"
+                    fill="currentColor"
+                  />
+                ))}
+                <circle cx="304" cy="20" r="7" fill="currentColor" />
+              </svg>
+              <span className="shrink-0 text-xs text-gray-700">
+                {record.events.length} {record.events.length === 1 ? "evento" : "eventos"}
+              </span>
+            </div>
             {record.events.length > 0 ? (
               <ol className="mt-4 grid gap-4 border-l border-line pl-5">
                 {record.events.map((event) => (
@@ -91,13 +137,14 @@ export function PublicLotPage({ id }: { id: string }) {
                     <p className="mb-1 text-xs text-gray-700">
                       <time dateTime={event.occurredAt}>{formatDate(event.occurredAt, true)}</time>
                       {" · "}
-                      {event.actorName} · {event.organization}
+                      {event.actorRole ? roleLabels[event.actorRole] : "Actor declarado"} ·{" "}
+                      {event.organization}
                     </p>
                     <p className="mb-0 text-sm leading-6 text-ink">{event.details}</p>
-                    {event.evidenceFileName && (
-                      <div className="mt-2">
-                        <EvidenceFileLink evidenceId={event.id} fileName={event.evidenceFileName} />
-                      </div>
+                    {event.evidenceSha256 && (
+                      <p className="mt-2 mb-0 break-all font-mono text-xs text-gray-700">
+                        SHA-256 de evidencia: {event.evidenceSha256}
+                      </p>
                     )}
                   </li>
                 ))}
@@ -149,20 +196,10 @@ export function PublicLotPage({ id }: { id: string }) {
                       <div className="sm:col-span-2">
                         <dt className="text-xs text-gray-700">Asociado por</dt>
                         <dd className="mt-1 mb-0 text-sm text-ink">
-                          {certificate.recordedBy} ·{" "}
                           {certificate.recordedByRole
                             ? roleLabels[certificate.recordedByRole]
-                            : "rol no registrado"}{" "}
+                            : "certificador declarado"}{" "}
                           · {certificate.recordedByOrganization}
-                        </dd>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <dt className="sr-only">Documento de evidencia</dt>
-                        <dd className="m-0">
-                          <EvidenceFileLink
-                            evidenceId={certificate.id}
-                            fileName={certificate.evidenceFileName}
-                          />
                         </dd>
                       </div>
                     </dl>
@@ -180,8 +217,9 @@ export function PublicLotPage({ id }: { id: string }) {
             )}
           </section>
           <p className="mt-7 mb-0 border-t border-line pt-4 text-xs leading-5 text-gray-700">
-            Vista local de demostración. Estos datos no se han verificado ni anclado en Stellar y
-            solo están disponibles en el navegador donde se creó el lote.
+            Los datos y certificados son declaraciones de sus autores. La ficha se comparte desde
+            Supabase; los archivos de evidencia no se publican. La huella en Stellar, si existe, no
+            confirma que la información de origen sea verdadera.
           </p>
         </article>
       ) : (
@@ -190,8 +228,7 @@ export function PublicLotPage({ id }: { id: string }) {
             Registro no disponible
           </h1>
           <p className="mt-3 max-w-prose text-sm leading-6 text-gray-700">
-            Este enlace apunta a un identificador de demostración que no está guardado en este
-            navegador. Los enlaces compartidos entre dispositivos requieren un backend persistente.
+            No se encontró una ficha pública para este identificador. Puede ser privada o no existir.
           </p>
         </section>
       )}

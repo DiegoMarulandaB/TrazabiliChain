@@ -2,7 +2,8 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { LotSharing } from "@/components/lot-sharing/LotSharing";
 import { EventForm } from "@/components/event-form/EventForm";
 import { CertificateForm } from "@/components/certificate-form/CertificateForm";
@@ -21,7 +22,9 @@ import { BorderBeamFrame } from "@/components/ui/motion/BorderBeamFrame";
 import { WalletConnect } from "@/components/wallet/WalletConnect";
 import {
   demoRoles,
+  loadLotRecords,
   saveLotRecord,
+  updateLotRecord,
   useLotRecords,
   type DemoRole,
   type LotRecord,
@@ -29,7 +32,10 @@ import {
 
 gsap.registerPlugin(useGSAP);
 
-type LotForm = Omit<LotRecord, "id" | "createdAt" | "events" | "certificates">;
+type LotForm = Omit<
+  LotRecord,
+  "id" | "createdAt" | "events" | "certificates" | "createdBy" | "createdByRole"
+>;
 
 const initialForm: LotForm = {
   product: "",
@@ -37,6 +43,7 @@ const initialForm: LotForm = {
   origin: "",
   originDate: "",
   organization: "",
+  isPublic: false,
 };
 
 function formatCreatedAt(value: string) {
@@ -50,16 +57,39 @@ export function RecordsPanel() {
   const records = useLotRecords();
   const [form, setForm] = useState<LotForm>(initialForm);
   const [role, setRole] = useState<DemoRole>("producer");
-  const [actorName, setActorName] = useState("Usuario de demostración");
-  const [activeOrganization, setActiveOrganization] = useState("Organización de demostración");
+  const [actorName, setActorName] = useState("");
+  const [activeOrganization, setActiveOrganization] = useState("");
   const [newRecordId, setNewRecordId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const [formError, setFormError] = useState("");
   const [storageError, setStorageError] = useState(false);
+  const [storageMessage, setStorageMessage] = useState("");
+  const [isLoadingRecords, setIsLoadingRecords] = useState(true);
+  const [isSavingRecord, setIsSavingRecord] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const recordElements = useRef<Record<string, HTMLLIElement | null>>({});
   const eventCount = records.reduce((total, record) => total + record.events.length, 0);
   const certificateCount = records.reduce((total, record) => total + record.certificates.length, 0);
+
+  useEffect(() => {
+    let isMounted = true;
+    void loadLotRecords().then((result) => {
+      if (!isMounted) {
+        return;
+      }
+      setIsLoadingRecords(false);
+      setStorageError(!result.success);
+      setStorageMessage(result.success ? "" : result.message);
+      if (!result.success) {
+        toast.error(result.message);
+      } else if (result.migratedCount) {
+        toast.success(`${result.migratedCount} registros anteriores migrados a Supabase.`);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useGSAP(
     () => {
@@ -105,10 +135,12 @@ export function RecordsPanel() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function createRecord(event: FormEvent<HTMLFormElement>) {
+  async function createRecord(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (role !== "producer") {
-      setAnnouncement("El perfil seleccionado no puede crear lotes en este flujo de demo.");
+      const message = "El perfil seleccionado no puede crear lotes en este flujo de demo.";
+      setAnnouncement(message);
+      toast.error(message);
       return;
     }
     if (
@@ -116,11 +148,14 @@ export function RecordsPanel() {
       !form.characteristics.trim() ||
       !form.origin.trim() ||
       !form.originDate ||
-      !form.organization.trim()
+      !form.organization.trim() ||
+      !actorName.trim() ||
+      !activeOrganization.trim()
     ) {
-      setFormError(
-        "Completa todos los campos obligatorios. No se aceptan campos con solo espacios.",
-      );
+      const message =
+        "Completa todos los campos obligatorios. No se aceptan campos con solo espacios.";
+      setFormError(message);
+      toast.error(message);
       return;
     }
 
@@ -130,22 +165,41 @@ export function RecordsPanel() {
       characteristics: form.characteristics.trim(),
       origin: form.origin.trim(),
       organization: form.organization.trim(),
+      createdBy: actorName.trim(),
+      createdByRole: role,
+      isPublic: form.isPublic,
       id: window.crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       events: [],
       certificates: [],
     };
 
-    if (!saveLotRecord(record)) {
-      setStorageError(true);
-      setAnnouncement("No se pudo guardar el lote en este navegador.");
-      return;
-    }
+    setIsSavingRecord(true);
+    try {
+      if (!(await saveLotRecord(record))) {
+        setStorageError(true);
+        const message = "No se pudo guardar el lote en Supabase.";
+        setStorageMessage(message);
+        setAnnouncement(message);
+        toast.error(message);
+        return;
+      }
 
-    setStorageError(false);
-    setNewRecordId(record.id);
-    setAnnouncement(`Registro de ${record.product} creado: ${formatCreatedAt(record.createdAt)}`);
-    setForm(initialForm);
+      setStorageError(false);
+      setStorageMessage("");
+      setNewRecordId(record.id);
+      setAnnouncement(`Registro de ${record.product} creado: ${formatCreatedAt(record.createdAt)}`);
+      toast.success(`Lote ${record.product} registrado correctamente.`);
+      setForm(initialForm);
+    } catch {
+      const message = "No se pudo guardar el lote. Comprueba la conexión e inténtalo de nuevo.";
+      setStorageError(true);
+      setStorageMessage(message);
+      setAnnouncement(message);
+      toast.error(message);
+    } finally {
+      setIsSavingRecord(false);
+    }
   }
 
   return (
@@ -217,7 +271,7 @@ export function RecordsPanel() {
             id="workflow-role"
             value={role}
             onChange={(event) => setRole(event.target.value as DemoRole)}
-            className="min-h-10 rounded-md border border-line bg-white px-3 text-sm text-ink"
+            className="min-h-10 rounded-md border border-line bg-white px-3 text-base text-ink sm:text-sm"
           >
             {demoRoles.map((demoRole) => (
               <option key={demoRole} value={demoRole}>
@@ -236,7 +290,8 @@ export function RecordsPanel() {
             maxLength={100}
             value={actorName}
             onChange={(event) => setActorName(event.target.value)}
-            className="min-h-10 rounded-md border border-line bg-white px-3 text-sm text-ink"
+            className="min-h-10 rounded-md border border-line bg-white px-3 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent sm:text-sm"
+            placeholder="Nombre de quien registra"
           />
         </div>
         <div className="grid gap-1.5">
@@ -249,7 +304,8 @@ export function RecordsPanel() {
             maxLength={120}
             value={activeOrganization}
             onChange={(event) => setActiveOrganization(event.target.value)}
-            className="min-h-10 rounded-md border border-line bg-white px-3 text-sm text-ink"
+            className="min-h-10 rounded-md border border-line bg-white px-3 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent sm:text-sm"
+            placeholder="Nombre de la organización"
           />
         </div>
       </section>
@@ -282,7 +338,7 @@ export function RecordsPanel() {
                   maxLength={100}
                   value={form.product}
                   onChange={(event) => updateField("product", event.target.value)}
-                  className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-gray-700 focus-visible:border-accent focus-visible:outline-accent"
+                  className="min-h-11 rounded-md border border-line bg-white px-3 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent focus-visible:border-accent focus-visible:outline-accent sm:text-sm"
                   placeholder="Café en grano"
                 />
               </div>
@@ -299,7 +355,7 @@ export function RecordsPanel() {
                   rows={3}
                   value={form.characteristics}
                   onChange={(event) => updateField("characteristics", event.target.value)}
-                  className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
+                  className="rounded-md border border-line bg-white px-3 py-2 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent sm:text-sm"
                   placeholder="Variedad, cosecha, calidad u otros datos del producto"
                 />
               </div>
@@ -316,7 +372,7 @@ export function RecordsPanel() {
                   maxLength={160}
                   value={form.origin}
                   onChange={(event) => updateField("origin", event.target.value)}
-                  className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-gray-700 focus-visible:border-accent focus-visible:outline-accent"
+                  className="min-h-11 rounded-md border border-line bg-white px-3 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent focus-visible:border-accent focus-visible:outline-accent sm:text-sm"
                   placeholder="Finca, municipio, país"
                 />
               </div>
@@ -334,9 +390,13 @@ export function RecordsPanel() {
                       required
                       value={form.originDate}
                       onChange={(event) => updateField("originDate", event.target.value)}
-                      className="date-input min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink focus-visible:border-accent focus-visible:outline-accent [&::-webkit-calendar-picker-indicator]:opacity-100"
+                      aria-describedby="origin-date-format"
+                      className="date-input min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-base text-ink focus-visible:border-accent focus-visible:outline-accent sm:text-sm [&::-webkit-calendar-picker-indicator]:opacity-100"
                     />
                   </div>
+                  <p id="origin-date-format" className="mb-0 text-xs text-gray-700">
+                    Formato de fecha: dd/mm/aaaa
+                  </p>
                 </div>
 
                 <div className="grid content-start gap-1.5">
@@ -351,17 +411,36 @@ export function RecordsPanel() {
                     maxLength={100}
                     value={form.organization}
                     onChange={(event) => updateField("organization", event.target.value)}
-                    className="min-h-11 min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-gray-700 focus-visible:border-accent focus-visible:outline-accent"
+                    className="min-h-11 min-w-0 rounded-md border border-line bg-white px-3 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent focus-visible:border-accent focus-visible:outline-accent sm:text-sm"
                     placeholder="Nombre de la organización"
                   />
                 </div>
               </div>
 
+              <div className="grid gap-1.5">
+                <label className="flex min-h-10 items-center gap-2 text-sm font-medium text-ink">
+                  <input
+                    type="checkbox"
+                    checked={form.isPublic}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, isPublic: event.target.checked }))
+                    }
+                    className="size-4 accent-accent"
+                  />
+                  Publicar la ficha de consulta del QR
+                </label>
+                <p className="mb-0 text-xs leading-5 text-gray-700">
+                  La ficha pública mostrará producto, origen, organización, actor declarado,
+                  eventos, certificados y sus huellas. No incluyas datos personales ni sensibles.
+                </p>
+              </div>
+
               <button
                 type="submit"
-                className="mt-1 min-h-11 cursor-pointer rounded-md bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-[#125746] focus-visible:outline-offset-2"
+                disabled={isSavingRecord || isLoadingRecords}
+                className="mt-1 min-h-11 cursor-pointer rounded-md bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-[#125746] focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60"
               >
-                Crear registro
+                {isSavingRecord ? "Guardando…" : "Crear registro"}
               </button>
             </form>
 
@@ -372,14 +451,13 @@ export function RecordsPanel() {
             )}
 
             <p className="mt-4 mb-0 text-xs leading-5 text-gray-700">
-              Modo de demostración local: los datos se guardan solo en este navegador. No hay inicio
-              de sesión ni permisos reales. No registres información sensible; los enlaces
-              compartidos no se resolverán en otros dispositivos.
+              Los lotes se guardan en Supabase y quedan vinculados a este navegador. Si borras sus
+              datos, perderás acceso para editarlos; los archivos de evidencia siguen locales.
+              Publica el QR solo si aceptas que sus campos permitidos sean públicos.
             </p>
             {storageError && (
               <p className="mt-2 mb-0 text-sm text-red-800" role="alert">
-                No se pudo guardar el lote. Revisa el espacio disponible del navegador e inténtalo
-                de nuevo.
+                {storageMessage || "No se pudo completar la operación de almacenamiento."}
               </p>
             )}
             <p className="sr-only" aria-live="polite" aria-atomic="true">
@@ -453,7 +531,9 @@ export function RecordsPanel() {
                 >
                   —
                 </span>
-                <p className="mb-1 font-medium text-ink">Aún no hay lotes</p>
+                <p className="mb-1 font-medium text-ink">
+                  {isLoadingRecords ? "Cargando lotes…" : "Aún no hay lotes"}
+                </p>
                 <p className="mb-0 text-sm text-gray-700">
                   El primer registro aparecerá en este historial.
                 </p>
@@ -570,10 +650,12 @@ export function RecordsPanel() {
                                   ? roleLabels[certificate.recordedByRole]
                                   : "rol no registrado"}
                               </p>
-                              <EvidenceFileLink
-                                evidenceId={certificate.id}
-                                fileName={certificate.evidenceFileName}
-                              />
+                              {certificate.evidenceFileName && (
+                                <EvidenceFileLink
+                                  evidenceId={certificate.id}
+                                  fileName={certificate.evidenceFileName}
+                                />
+                              )}
                               <p className="mb-0 text-xs text-gray-700">
                                 Asociado como evidencia; no implica que el emisor o certificado haya
                                 sido validado.
@@ -584,6 +666,29 @@ export function RecordsPanel() {
                       </section>
                     )}
                     <LotSharing record={record} />
+                    <label className="mt-4 flex min-h-10 items-center gap-2 text-sm font-medium text-ink">
+                      <input
+                        type="checkbox"
+                        checked={record.isPublic}
+                        onChange={(event) => {
+                          const isPublic = event.target.checked;
+                          void updateLotRecord(record.id, (current) => ({
+                            ...current,
+                            isPublic,
+                          })).then((saved) => {
+                            if (saved) {
+                              toast.success(
+                                isPublic ? "Ficha pública activada." : "Ficha pública retirada.",
+                              );
+                            } else {
+                              toast.error("No se pudo cambiar la publicación del lote.");
+                            }
+                          });
+                        }}
+                        className="size-4 accent-accent"
+                      />
+                      Publicar ficha de consulta del QR
+                    </label>
                     <TraceabilityAnchor record={record} />
                   </li>
                 ))}

@@ -31,7 +31,13 @@ export function ConsumerScanner() {
     } else {
       try {
         const scannedUrl = new URL(trimmedValue, window.location.origin);
-        if (scannedUrl.origin !== window.location.origin) {
+        const configuredOrigin = process.env.NEXT_PUBLIC_SITE_URL
+          ? new URL(process.env.NEXT_PUBLIC_SITE_URL).origin
+          : window.location.origin;
+        if (
+          scannedUrl.origin !== window.location.origin &&
+          scannedUrl.origin !== configuredOrigin
+        ) {
           setMessage("Este QR pertenece a otro dominio. Ábrelo en el dominio donde se generó.");
           return;
         }

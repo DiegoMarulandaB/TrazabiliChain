@@ -94,10 +94,12 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
                     <span className="block text-xs text-gray-700 ">
                       Asociado por {certificate.recordedBy}; emisor declarado, no verificado.
                     </span>
-                    <EvidenceFileLink
-                      evidenceId={certificate.id}
-                      fileName={certificate.evidenceFileName}
-                    />
+                    {certificate.evidenceFileName && (
+                      <EvidenceFileLink
+                        evidenceId={certificate.id}
+                        fileName={certificate.evidenceFileName}
+                      />
+                    )}
                   </li>
                 ))}
               </ul>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import {
   updateLotRecord,
   type DemoRole,
@@ -39,33 +40,43 @@ export function CertificateForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const submissionInProgress = useRef(false);
 
+  function reportError(message: string) {
+    setMessage(message);
+    toast.error(message);
+  }
+
+  function reportSuccess(message: string) {
+    setMessage(message);
+    toast.success(message);
+  }
+
   async function submitCertificate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submissionInProgress.current) {
       return;
     }
     if (!lotId || !name.trim() || !issuer.trim() || !certificateNumber.trim() || !issuedAt) {
-      setMessage("Completa todos los campos obligatorios del certificado.");
+      reportError("Completa todos los campos obligatorios del certificado.");
       return;
     }
     if (!actorName.trim() || !organization.trim()) {
-      setMessage("Completa el actor y la organización declarados en el perfil de trabajo.");
+      reportError("Completa el actor y la organización declarados en el perfil de trabajo.");
       return;
     }
     if (!file || !lotId) {
-      setMessage("Selecciona un lote y el archivo que respalda el certificado.");
+      reportError("Selecciona un lote y el archivo que respalda el certificado.");
       return;
     }
     if (file.size > maximumFileSize) {
-      setMessage("El archivo supera el límite local de 10 MB.");
+      reportError("El archivo supera el límite local de 10 MB.");
       return;
     }
     if (!acceptedEvidenceTypes.has(file.type)) {
-      setMessage("El archivo debe ser PDF, JPEG, PNG o WebP.");
+      reportError("El archivo debe ser PDF, JPEG, PNG o WebP.");
       return;
     }
     if (validUntil && validUntil < issuedAt) {
-      setMessage("La vigencia no puede terminar antes de la fecha de emisión.");
+      reportError("La vigencia no puede terminar antes de la fecha de emisión.");
       return;
     }
 
@@ -83,13 +94,13 @@ export function CertificateForm({
           certificate.evidenceSha256 === evidenceSha256,
       );
       if (duplicateCertificate) {
-        setMessage("Este número de certificado y archivo ya están asociados a ese lote.");
+        reportError("Este número de certificado y archivo ya están asociados a ese lote.");
         return;
       }
 
       const fileSaved = await saveEvidenceFile(certificateId, file);
       if (!fileSaved) {
-        setMessage("No se pudo guardar el documento en este navegador.");
+        reportError("No se pudo guardar el documento en este navegador.");
         return;
       }
 
@@ -108,18 +119,18 @@ export function CertificateForm({
         recordedAt: new Date().toISOString(),
       };
 
-      const saved = updateLotRecord(lotId, (record) => ({
+      const saved = await updateLotRecord(lotId, (record) => ({
         ...record,
         certificates: [...record.certificates, certificate],
       }));
 
       if (!saved) {
         await removeEvidenceFile(certificateId);
-        setMessage("No se pudo asociar el certificado al lote.");
+        reportError("No se pudo guardar el certificado en Supabase.");
         return;
       }
 
-      setMessage("Evidencia asociada. La identidad del emisor no ha sido verificada.");
+      reportSuccess("Evidencia asociada. La identidad del emisor no ha sido verificada.");
       setName("");
       setIssuer("");
       setCertificateNumber("");
@@ -130,7 +141,7 @@ export function CertificateForm({
         fileInputRef.current.value = "";
       }
     } catch {
-      setMessage("No se pudo procesar el archivo en este navegador.");
+      reportError("No se pudo procesar el archivo en este navegador.");
     } finally {
       submissionInProgress.current = false;
       setIsSaving(false);

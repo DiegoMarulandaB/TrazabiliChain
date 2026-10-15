@@ -9,7 +9,10 @@ export function WalletConnect() {
 
   async function handleConnect() {
     try {
-      await connect();
+      const address = await connect();
+      toast.success("Wallet de Stellar conectada.", {
+        description: `${address.slice(0, 6)}…${address.slice(-5)}`,
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo conectar la wallet.");
     }
@@ -18,6 +21,7 @@ export function WalletConnect() {
   async function handleDisconnect() {
     try {
       await disconnect();
+      toast.success("Wallet desconectada.");
     } catch {
       toast.error("No se pudo desconectar la wallet.");
     }

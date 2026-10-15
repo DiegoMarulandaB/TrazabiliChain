@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const isProduction = process.env.NODE_ENV === "production";
+const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
+  : undefined;
 const connectSources = [
   "'self'",
   "https://soroban-testnet.stellar.org",
@@ -10,6 +13,7 @@ const connectSources = [
   "https://relay.walletconnect.com",
   "https://rpc.walletconnect.com",
   "wss://relay.walletconnect.com",
+  ...(supabaseOrigin ? [supabaseOrigin] : []),
   ...(!isProduction ? ["ws:", "wss:"] : []),
 ].join(" ");
 const contentSecurityPolicy = [

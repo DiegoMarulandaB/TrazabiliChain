@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import {
   addOrganizationMember,
   demoRoles,
@@ -37,19 +38,25 @@ export function OrganizationMembers() {
 
     if (!saved) {
       setMessage("No se pudo guardar el miembro en este navegador.");
+      toast.error("No se pudo guardar el miembro en este navegador.");
       return;
     }
 
     setMessage(`${name.trim()} agregado con perfil ${roleLabels[role]}.`);
+    toast.success(`${name.trim()} agregado al directorio local.`);
     setName("");
   }
 
   function deleteMember(id: string, memberName: string) {
-    setMessage(
-      removeOrganizationMember(id)
-        ? `Se quitó ${memberName} del directorio local.`
-        : "No se pudo actualizar el directorio local.",
-    );
+    if (removeOrganizationMember(id)) {
+      const message = `Se quitó ${memberName} del directorio local.`;
+      setMessage(message);
+      toast.success(message);
+    } else {
+      const message = "No se pudo actualizar el directorio local.";
+      setMessage(message);
+      toast.error(message);
+    }
   }
 
   return (

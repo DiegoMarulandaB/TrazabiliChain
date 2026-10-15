@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export type LotRecord = {
   id: string;
@@ -9,6 +10,9 @@ export type LotRecord = {
   origin: string;
   originDate: string;
   organization: string;
+  createdBy: string;
+  createdByRole: DemoRole | null;
+  isPublic: boolean;
   createdAt: string;
   events: LotEvent[];
   certificates: LotCertificate[];
@@ -66,7 +70,7 @@ const memberStorageKey = "trazabilichain-demo-members";
 const emptyRecords: LotRecord[] = [];
 const emptyMembers: OrganizationMember[] = [];
 const subscribers = new Set<() => void>();
-let snapshot: LotRecord[] | undefined;
+let snapshot: LotRecord[] = emptyRecords;
 let memberSnapshot: OrganizationMember[] | undefined;
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -120,7 +124,6 @@ function normalizeLotCertificate(value: unknown): LotCertificate | null {
     "certificateNumber",
     "issuedAt",
     "validUntil",
-    "evidenceFileName",
     "evidenceSha256",
     "recordedAt",
   ];
@@ -135,7 +138,7 @@ function normalizeLotCertificate(value: unknown): LotCertificate | null {
     certificateNumber: value.certificateNumber as string,
     issuedAt: value.issuedAt as string,
     validUntil: value.validUntil as string,
-    evidenceFileName: value.evidenceFileName as string,
+    evidenceFileName: typeof value.evidenceFileName === "string" ? value.evidenceFileName : "",
     evidenceSha256: value.evidenceSha256 as string,
     recordedBy: typeof value.recordedBy === "string" ? value.recordedBy : "No registrado",
     recordedByRole: isDemoRole(value.recordedByRole) ? value.recordedByRole : null,
@@ -164,6 +167,9 @@ function normalizeLotRecord(value: unknown): LotRecord | null {
     origin: value.origin as string,
     originDate: value.originDate as string,
     organization: value.organization as string,
+    createdBy: typeof value.createdBy === "string" ? value.createdBy : "No registrado",
+    createdByRole: isDemoRole(value.createdByRole) ? value.createdByRole : null,
+    isPublic: typeof value.isPublic === "boolean" ? value.isPublic : false,
     createdAt: value.createdAt as string,
     events: Array.isArray(value.events)
       ? value.events.map(normalizeLotEvent).filter((item): item is LotEvent => item !== null)
@@ -189,24 +195,6 @@ function isOrganizationMember(value: unknown): value is OrganizationMember {
   );
 }
 
-function readRecords() {
-  try {
-    const rawRecords = window.localStorage.getItem(storageKey);
-    if (!rawRecords) {
-      return emptyRecords;
-    }
-
-    const parsedRecords: unknown = JSON.parse(rawRecords);
-    return Array.isArray(parsedRecords)
-      ? parsedRecords
-          .map(normalizeLotRecord)
-          .filter((record): record is LotRecord => record !== null)
-      : emptyRecords;
-  } catch {
-    return emptyRecords;
-  }
-}
-
 function readMembers() {
   try {
     const rawMembers = window.localStorage.getItem(memberStorageKey);
@@ -222,11 +210,6 @@ function readMembers() {
 }
 
 function getSnapshot() {
-  if (typeof window === "undefined") {
-    return emptyRecords;
-  }
-
-  snapshot ??= readRecords();
   return snapshot;
 }
 
@@ -244,9 +227,6 @@ function notifySubscribers() {
 }
 
 function handleStorageChange(event: StorageEvent) {
-  if (event.key === storageKey || event.key === null) {
-    snapshot = readRecords();
-  }
   if (event.key === memberStorageKey || event.key === null) {
     memberSnapshot = readMembers();
   }
@@ -275,28 +255,162 @@ export function useOrganizationMembers() {
   return useSyncExternalStore(subscribe, getMemberSnapshot, () => emptyMembers);
 }
 
-function writeRecords(records: LotRecord[]) {
+function readLegacyRecords() {
   try {
-    window.localStorage.setItem(storageKey, JSON.stringify(records));
+    const rawRecords = window.localStorage.getItem(storageKey);
+    const parsedRecords: unknown = rawRecords ? JSON.parse(rawRecords) : [];
+    return Array.isArray(parsedRecords)
+      ? parsedRecords
+          .map(normalizeLotRecord)
+          .filter((record): record is LotRecord => record !== null)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function loadLotRecords() {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    return { success: false, message: "Configura Supabase para cargar los registros." };
+  }
+
+  try {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user || userData.user.is_anonymous) {
+      return { success: false, message: "Inicia sesión para consultar tus registros." };
+    }
+
+    const { data, error } = await supabase
+      .from("traceability_lots")
+      .select("record")
+      .order("created_at", { ascending: false });
+    if (error) {
+      if (error.code === "42P01" || error.code === "PGRST205") {
+        return {
+          success: false,
+          message: "Falta aplicar la migración de Supabase para habilitar el almacenamiento de lotes.",
+        };
+      }
+      return { success: false, message: "No se pudieron cargar los registros desde Supabase." };
+    }
+
+    const remoteRecords = data
+      .map((row) => normalizeLotRecord(row.record))
+      .filter((record): record is LotRecord => record !== null);
+    const remoteIds = new Set(remoteRecords.map((record) => record.id));
+    const allLegacyRecords = readLegacyRecords();
+    const legacyRecords = allLegacyRecords.filter((record) => !remoteIds.has(record.id));
+    const migratedRecords: LotRecord[] = [];
+
+    for (const record of legacyRecords) {
+      const { error: migrationError } = await supabase.from("traceability_lots").insert({
+        id: record.id,
+        owner_id: userData.user.id,
+        record,
+        is_public: record.isPublic,
+      });
+      if (!migrationError) {
+        migratedRecords.push(record);
+      }
+    }
+
+    const records = [...migratedRecords, ...remoteRecords].sort((first, second) =>
+      second.createdAt.localeCompare(first.createdAt),
+    );
+    if (migratedRecords.length === legacyRecords.length) {
+      window.localStorage.removeItem(storageKey);
+    }
     snapshot = records;
+    notifySubscribers();
+    return { success: true, message: "Registros cargados.", migratedCount: migratedRecords.length };
+  } catch {
+    return { success: false, message: "No se pudo conectar con Supabase para cargar registros." };
+  }
+}
+
+export async function getPublicLotRecord(id: string) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("public_traceability_lots")
+      .select("public_record")
+      .eq("id", id)
+      .maybeSingle();
+    return error || !data ? null : normalizeLotRecord(data.public_record);
+  } catch {
+    return null;
+  }
+}
+
+export async function saveLotRecord(record: LotRecord) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    return false;
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user || userData.user.is_anonymous) {
+    return false;
+  }
+
+  const { error } = await supabase
+    .from("traceability_lots")
+    .insert({
+      id: record.id,
+      owner_id: userData.user.id,
+      record,
+      is_public: record.isPublic,
+    });
+  if (error) {
+    return false;
+  }
+
+  snapshot = [record, ...getSnapshot()];
+  notifySubscribers();
+  return true;
+}
+
+export async function updateLotRecord(id: string, update: (record: LotRecord) => LotRecord) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    return false;
+  }
+
+  try {
+    const { data, error: readError } = await supabase
+      .from("traceability_lots")
+      .select("record")
+      .eq("id", id)
+      .maybeSingle();
+    const currentRecord = data ? normalizeLotRecord(data.record) : null;
+    if (readError || !currentRecord) {
+      return false;
+    }
+
+    const updatedRecord = update(currentRecord);
+    const { error } = await supabase
+      .from("traceability_lots")
+      .update({
+        record: updatedRecord,
+        is_public: updatedRecord.isPublic,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+    if (error) {
+      return false;
+    }
+
+    snapshot = snapshot.map((record) => (record.id === id ? updatedRecord : record));
     notifySubscribers();
     return true;
   } catch {
     return false;
   }
-}
-
-export function saveLotRecord(record: LotRecord) {
-  return writeRecords([record, ...getSnapshot()]);
-}
-
-export function updateLotRecord(id: string, update: (record: LotRecord) => LotRecord) {
-  const records = getSnapshot();
-  if (!records.some((record) => record.id === id)) {
-    return false;
-  }
-
-  return writeRecords(records.map((record) => (record.id === id ? update(record) : record)));
 }
 
 export function addOrganizationMember(member: OrganizationMember) {

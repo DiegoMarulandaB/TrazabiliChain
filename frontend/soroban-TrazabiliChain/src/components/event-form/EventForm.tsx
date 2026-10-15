@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import {
   hashEvidenceFile,
   removeEvidenceFile,
@@ -43,25 +44,35 @@ export function EventForm({
   const evidenceInputRef = useRef<HTMLInputElement>(null);
   const submissionInProgress = useRef(false);
 
+  function reportError(message: string) {
+    setMessage(message);
+    toast.error(message);
+  }
+
+  function reportSuccess(message: string) {
+    setMessage(message);
+    toast.success(message);
+  }
+
   async function submitEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submissionInProgress.current) {
       return;
     }
     if (!lotId || !eventTypes.includes(type) || !occurredAt || !details.trim()) {
-      setMessage("Completa los campos obligatorios del evento antes de continuar.");
+      reportError("Completa los campos obligatorios del evento antes de continuar.");
       return;
     }
     if (!actorName.trim() || !organization.trim()) {
-      setMessage("Completa el actor y la organización declarados en el perfil de trabajo.");
+      reportError("Completa el actor y la organización declarados en el perfil de trabajo.");
       return;
     }
     if (evidenceFile && evidenceFile.size > maximumEvidenceSize) {
-      setMessage("La evidencia supera el límite local de 10 MB.");
+      reportError("La evidencia supera el límite local de 10 MB.");
       return;
     }
     if (evidenceFile && !acceptedEvidenceTypes.has(evidenceFile.type)) {
-      setMessage("La evidencia debe ser PDF, JPEG, PNG o WebP.");
+      reportError("La evidencia debe ser PDF, JPEG, PNG o WebP.");
       return;
     }
 
@@ -75,7 +86,7 @@ export function EventForm({
         existingEvent.details.trim().toLocaleLowerCase("es") === normalizedDetails,
     );
     if (duplicateEvent) {
-      setMessage("Este evento ya existe en el historial del lote.");
+      reportError("Este evento ya existe en el historial del lote.");
       return;
     }
 
@@ -88,7 +99,7 @@ export function EventForm({
       if (evidenceFile) {
         evidenceSha256 = await hashEvidenceFile(evidenceFile);
         if (!(await saveEvidenceFile(eventId, evidenceFile))) {
-          setMessage("No se pudo guardar la evidencia en este navegador.");
+          reportError("No se pudo guardar la evidencia en este navegador.");
           return;
         }
       }
@@ -107,7 +118,7 @@ export function EventForm({
           : {}),
       };
 
-      const saved = updateLotRecord(lotId, (record) => ({
+      const saved = await updateLotRecord(lotId, (record) => ({
         ...record,
         events: [...record.events, lotEvent].sort((first, second) =>
           first.occurredAt.localeCompare(second.occurredAt),
@@ -118,18 +129,18 @@ export function EventForm({
         if (evidenceFile) {
           await removeEvidenceFile(eventId);
         }
-        setMessage("No se pudo guardar el evento en este navegador.");
+        reportError("No se pudo guardar el evento en Supabase.");
         return;
       }
 
-      setMessage(`Evento de ${type.toLowerCase()} agregado al historial.`);
+      reportSuccess(`Evento de ${type.toLowerCase()} agregado al historial.`);
       setDetails("");
       setEvidenceFile(null);
       if (evidenceInputRef.current) {
         evidenceInputRef.current.value = "";
       }
     } catch {
-      setMessage("No se pudo procesar la evidencia en este navegador.");
+      reportError("No se pudo procesar la evidencia en este navegador.");
     } finally {
       submissionInProgress.current = false;
       setIsSaving(false);

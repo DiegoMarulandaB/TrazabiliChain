@@ -4,7 +4,6 @@ import { SplashScreen } from "@/components/splash-screen/SplashScreen";
 import { Toaster } from "@/components/ui/feedback/Toaster";
 import "./globals.css";
 
-// "http://localhost:3000";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trazabilichain.vercel.app/";
 const siteTitle = "TrazabiliChain | Trazabilidad del origen al destino";
 const siteDescription =

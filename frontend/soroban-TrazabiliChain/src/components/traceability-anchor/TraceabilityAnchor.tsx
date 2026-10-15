@@ -17,9 +17,9 @@ export function TraceabilityAnchor({ record }: { record: LotRecord }) {
         {isAnchoring ? "Registrando en Stellar…" : "Anclar huella del lote"}
       </button>
       <p className="mb-0 max-w-xl text-xs leading-5 text-gray-700">
-        Solo se registra una huella SHA-256 de los datos públicos del lote; documentos y datos
-        completos permanecen fuera de la cadena. La firma y tarifa de Testnet requieren una wallet
-        financiada con XLM de prueba.
+        Se ancla la huella SHA-256 de la ficha pública, sus eventos y metadatos de certificados; no
+        se registran nombres personales ni archivos. Cada cambio permite añadir una nueva huella
+        sin borrar la anterior. La firma requiere una wallet autorizada y XLM de prueba.
       </p>
       {result && (
         <a

@@ -1,5 +1,8 @@
 use super::*;
-use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, String};
+use soroban_sdk::{
+    testutils::{storage::Persistent, Address as _},
+    Address, BytesN, Env, String,
+};
 
 #[test]
 fn records_and_reads_append_only_event_hashes() {
@@ -46,4 +49,33 @@ fn authorized_actor_can_record_and_revoked_actor_cannot() {
         Err(Ok(Error::Unauthorized))
     );
     assert_eq!(client.event_count(&lot_id), 1);
+}
+
+#[test]
+fn extends_persistent_event_entry_ttl() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let contract_id = env.register(TraceabilityRegistry, (&admin,));
+    let client = TraceabilityRegistryClient::new(&env, &contract_id);
+    let lot_id = String::from_str(&env, "lot-ttl");
+    let event_hash = BytesN::from_array(&env, &[4; 32]);
+
+    client.record_event(&admin, &lot_id, &event_hash);
+
+    env.as_contract(&contract_id, || {
+        assert_eq!(
+            env.storage()
+                .persistent()
+                .get_ttl(&DataKey::EventCount(lot_id.clone())),
+            TTL_EXTEND_TO
+        );
+        assert_eq!(
+            env.storage()
+                .persistent()
+                .get_ttl(&DataKey::EventHash(lot_id, 0)),
+            TTL_EXTEND_TO
+        );
+    });
 }

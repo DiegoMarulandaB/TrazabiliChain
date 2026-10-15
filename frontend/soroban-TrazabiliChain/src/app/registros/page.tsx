@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/header/Header";
-// import { RecordsAuth } from "@/components/records-auth/RecordsAuth";
-import { RecordsPanel } from "@/components/records-panel/RecordsPanel";
+import { RecordsAuth } from "@/components/records-auth/RecordsAuth";
 import { SiteFooter } from "@/components/site-footer/SiteFooter";
 
 export const metadata: Metadata = {
@@ -17,9 +16,7 @@ export default function RecordsPage() {
         id="contenido"
         className="records-route-enter mx-auto w-[min(100%-2.5rem,70rem)] flex-1 py-8 sm:w-[min(100%-3rem,70rem)] sm:py-12"
       >
-        {/* Acceso Supabase pausado hasta recibir las llaves; conservar para reactivarlo después. */}
-        {/* <RecordsAuth /> */}
-        <RecordsPanel />
+        <RecordsAuth />
       </main>
       <SiteFooter />
     </div>
