@@ -47,8 +47,8 @@ export function AnonymousRecordsSession() {
               "code" in error && typeof error.code === "string" ? `: ${error.code}` : "";
             const message =
               error.status === 429
-                  ? "Se alcanzó el límite temporal de sesiones anónimas. Espera unos minutos y vuelve a intentar."
-                  : `Supabase rechazó la sesión anónima${error.status ? ` (HTTP ${error.status}${errorCode})` : errorCode}. Verifica el project ref, Anonymous Sign-Ins, CAPTCHA/Turnstile y rate limits.`;
+                ? "Se alcanzó el límite temporal de sesiones anónimas. Espera unos minutos y vuelve a intentar."
+                : `Supabase rechazó la sesión anónima${error.status ? ` (HTTP ${error.status}${errorCode})` : errorCode}. Verifica el project ref, Anonymous Sign-Ins, CAPTCHA/Turnstile y rate limits.`;
             return {
               authenticated: false,
               message,
@@ -102,7 +102,10 @@ export function AnonymousRecordsSession() {
       >
         {stage === "loading" ? "Preparando el panel" : "El panel no está disponible"}
       </h1>
-      <p className="mb-2 max-w-prose text-sm leading-6 text-gray-700" role={stage === "loading" ? "status" : "alert"}>
+      <p
+        className="mb-2 max-w-prose text-sm leading-6 text-gray-700"
+        role={stage === "loading" ? "status" : "alert"}
+      >
         {stage === "loading"
           ? "Estamos preparando una sesión segura para tus registros."
           : stage === "needsConfiguration"

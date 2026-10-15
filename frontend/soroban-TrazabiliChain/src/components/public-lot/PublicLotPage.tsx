@@ -228,7 +228,8 @@ export function PublicLotPage({ id }: { id: string }) {
             Registro no disponible
           </h1>
           <p className="mt-3 max-w-prose text-sm leading-6 text-gray-700">
-            No se encontró una ficha pública para este identificador. Puede ser privada o no existir.
+            No se encontró una ficha pública para este identificador. Puede ser privada o no
+            existir.
           </p>
         </section>
       )}

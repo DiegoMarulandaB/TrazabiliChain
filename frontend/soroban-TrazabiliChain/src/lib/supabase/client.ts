@@ -15,11 +15,12 @@ export function getSupabaseBrowserClient() {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  supabaseClient = supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey, {
-        auth: { flowType: "pkce", detectSessionInUrl: true },
-      })
-    : null;
+  supabaseClient =
+    supabaseUrl && supabaseAnonKey
+      ? createClient(supabaseUrl, supabaseAnonKey, {
+          auth: { flowType: "pkce", detectSessionInUrl: true },
+        })
+      : null;
 
   return supabaseClient;
 }

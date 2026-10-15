@@ -289,7 +289,8 @@ export async function loadLotRecords() {
       if (error.code === "42P01" || error.code === "PGRST205") {
         return {
           success: false,
-          message: "Falta aplicar la migración de Supabase para habilitar el almacenamiento de lotes.",
+          message:
+            "Falta aplicar la migración de Supabase para habilitar el almacenamiento de lotes.",
         };
       }
       return { success: false, message: "No se pudieron cargar los registros desde Supabase." };
@@ -358,14 +359,12 @@ export async function saveLotRecord(record: LotRecord) {
     return false;
   }
 
-  const { error } = await supabase
-    .from("traceability_lots")
-    .insert({
-      id: record.id,
-      owner_id: userData.user.id,
-      record,
-      is_public: record.isPublic,
-    });
+  const { error } = await supabase.from("traceability_lots").insert({
+    id: record.id,
+    owner_id: userData.user.id,
+    record,
+    is_public: record.isPublic,
+  });
   if (error) {
     return false;
   }
