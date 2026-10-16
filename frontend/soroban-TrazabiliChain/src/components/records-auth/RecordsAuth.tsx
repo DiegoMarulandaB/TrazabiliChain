@@ -16,7 +16,9 @@ import {
 import { saveProductNotificationPreference } from "@/lib/lots/product-notifications";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const supabase = getSupabaseBrowserClient();
+const hasSupabaseConfig = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+);
 
 type AccessStage =
   "credentials" | "workflowPreferences" | "lotLookup" | "dashboard" | "resetPassword";
@@ -48,6 +50,7 @@ export function RecordsAuth() {
   }
 
   useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       return;
     }
@@ -104,6 +107,7 @@ export function RecordsAuth() {
   async function submitCredentials(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       notify("Configura Supabase para habilitar el acceso al dashboard.");
       return;
@@ -146,6 +150,7 @@ export function RecordsAuth() {
 
   async function sendPasswordRecovery() {
     setMessage("");
+    const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       notify("Configura Supabase para recuperar la contraseña.");
       return;
@@ -178,6 +183,7 @@ export function RecordsAuth() {
   async function updateRecoveredPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       notify("No se pudo conectar con Supabase para cambiar la contraseña.");
       return;
@@ -211,7 +217,7 @@ export function RecordsAuth() {
 
   async function signOut() {
     try {
-      const { error } = (await supabase?.auth.signOut()) ?? { error: null };
+      const { error } = (await getSupabaseBrowserClient()?.auth.signOut()) ?? { error: null };
       if (error) {
         notify("No se pudo cerrar la sesión. Inténtalo de nuevo.");
         return;
@@ -531,7 +537,7 @@ export function RecordsAuth() {
           )}
           <button
             type="submit"
-            disabled={isSubmitting || !supabase}
+            disabled={isSubmitting || !hasSupabaseConfig}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Actualizando…" : "Guardar nueva contraseña"}
@@ -658,7 +664,7 @@ export function RecordsAuth() {
                   </p>
                 )}
               </div>
-              {!supabase && (
+              {!hasSupabaseConfig && (
                 <p
                   className="mb-0 border-l-2 border-amber-600 bg-amber-50 px-3 py-2 text-sm leading-5 text-amber-950"
                   role="alert"
@@ -677,7 +683,7 @@ export function RecordsAuth() {
               )}
               <button
                 type="submit"
-                disabled={isSubmitting || !supabase}
+                disabled={isSubmitting || !hasSupabaseConfig}
                 className="mt-1 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting
@@ -705,7 +711,7 @@ export function RecordsAuth() {
               {mode === "signIn" && (
                 <button
                   type="button"
-                  disabled={isSubmitting || !supabase}
+                  disabled={isSubmitting || !hasSupabaseConfig}
                   onClick={() => void sendPasswordRecovery()}
                   className="min-h-10 font-semibold text-accent underline-offset-4 hover:underline disabled:opacity-60"
                 >
