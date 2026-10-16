@@ -38,6 +38,9 @@ importers:
       border-beam:
         specifier: ^1.4.1
         version: 1.4.1(react-dom@19.3.0)(react@19.3.0)
+      country-state-city:
+        specifier: ^3.2.1
+        version: 3.2.1
       gsap:
         specifier: ^3.15.0
         version: 3.15.0
@@ -4563,6 +4566,10 @@ packages:
 
   /cookie-es@1.2.3:
     resolution: {integrity: sha512-lXVyvUvrNXblMqzIRrxHb57UUVmqsSWlxqt3XIjCkUP0wDAf6uicO6KMbEgYrMNtEvWgWHwe42CKxPu9MYAnWw==}
+    dev: false
+
+  /country-state-city@3.2.1:
+    resolution: {integrity: sha512-kxbanqMc6izjhc/EHkGPCTabSPZ2G6eG4/97akAYHJUN4stzzFEvQPZoF8oXDQ+10gM/O/yUmISCR1ZVxyb6EA==}
     dev: false
 
   /cross-fetch@3.2.0:

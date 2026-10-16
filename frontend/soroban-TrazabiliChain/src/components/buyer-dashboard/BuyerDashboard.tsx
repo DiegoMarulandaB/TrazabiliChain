@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
+import { LotCharacteristics } from "@/components/lot-characteristics/LotCharacteristics";
 import type { LotRecord } from "@/lib/lots/lot-storage";
 
 export function BuyerDashboard({ records }: { records: LotRecord[] }) {
@@ -73,7 +74,9 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
               </span>
             </div>
             {record.characteristics && (
-              <p className="mt-3 mb-0 text-sm leading-6 text-ink">{record.characteristics}</p>
+              <div className="mt-3">
+                <LotCharacteristics value={record.characteristics} />
+              </div>
             )}
             {record.certificates.length > 0 && (
               <ul className="mt-4 grid gap-2 border-t border-line pt-3 text-sm">
@@ -96,7 +99,7 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
                     </span>
                     {certificate.evidenceFileName && (
                       <EvidenceFileLink
-                        evidenceId={certificate.id}
+                        evidenceId={certificate.evidenceId ?? certificate.id}
                         fileName={certificate.evidenceFileName}
                       />
                     )}
@@ -127,7 +130,10 @@ export function BuyerDashboard({ records }: { records: LotRecord[] }) {
                       </p>
                     )}
                     {event.evidenceFileName && (
-                      <EvidenceFileLink evidenceId={event.id} fileName={event.evidenceFileName} />
+                      <EvidenceFileLink
+                        evidenceId={event.evidenceId ?? event.id}
+                        fileName={event.evidenceFileName}
+                      />
                     )}
                   </li>
                 ))}

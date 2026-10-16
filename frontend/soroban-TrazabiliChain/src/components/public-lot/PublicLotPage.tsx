@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
+import { LotSharing } from "@/components/lot-sharing/LotSharing";
+import { LotCharacteristics } from "@/components/lot-characteristics/LotCharacteristics";
 import { getPublicLotRecord, type LotRecord } from "@/lib/lots/lot-storage";
 
 const subscribeToHydration = () => () => {};
@@ -57,6 +60,16 @@ export function PublicLotPage({ id }: { id: string }) {
         <article className="mt-8 rounded-md border border-line bg-white p-5 sm:p-8">
           <p className="mb-2 text-[11px] font-bold text-accent">FICHA PÚBLICA · DATOS DECLARADOS</p>
           <h1 className="mb-6 font-display text-3xl font-medium text-ink">{record.product}</h1>
+          {record.photoDataUrl && (
+            <Image
+              src={record.photoDataUrl}
+              alt={`Imagen declarada del producto ${record.product}`}
+              width={1200}
+              height={900}
+              unoptimized
+              className="mb-6 aspect-4/3 w-full rounded-md border border-line object-cover"
+            />
+          )}
           <dl className="grid gap-5 sm:grid-cols-2">
             <div>
               <dt className="text-xs text-gray-700">Identificador del lote</dt>
@@ -69,8 +82,8 @@ export function PublicLotPage({ id }: { id: string }) {
             {record.characteristics && (
               <div className="sm:col-span-2">
                 <dt className="text-xs text-gray-700">Características del lote</dt>
-                <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-ink">
-                  {record.characteristics}
+                <dd className="mt-2">
+                  <LotCharacteristics value={record.characteristics} />
                 </dd>
               </div>
             )}
@@ -215,6 +228,12 @@ export function PublicLotPage({ id }: { id: string }) {
                 No se han asociado certificados a este lote.
               </p>
             )}
+          </section>
+          <section
+            className="mt-7 border-t border-line pt-5"
+            aria-label="Código QR y opciones para compartir"
+          >
+            <LotSharing record={record} />
           </section>
           <p className="mt-7 mb-0 border-t border-line pt-4 text-xs leading-5 text-gray-700">
             Los datos y certificados son declaraciones de sus autores. La ficha se comparte desde

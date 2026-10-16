@@ -13,9 +13,34 @@ export type LotRecord = {
   createdBy: string;
   createdByRole: DemoRole | null;
   isPublic: boolean;
+  isDeleted?: boolean;
+  photoDataUrl?: string;
   createdAt: string;
+  auditHistory?: LotAuditEntry[];
+  auditNotes?: LotAuditNote[];
   events: LotEvent[];
   certificates: LotCertificate[];
+};
+
+export type LotAuditEntry = {
+  id: string;
+  action: "edited" | "deleted";
+  target?: "lote" | "evento" | "certificado";
+  at: string;
+  actor: string;
+  role: DemoRole;
+  reason: string;
+  description: string;
+};
+
+export type LotAuditNote = {
+  id: string;
+  author: string;
+  organization: string;
+  text: string;
+  reason: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export const demoRoles = [
@@ -39,6 +64,7 @@ export type LotEvent = {
   actorRole: DemoRole | null;
   organization: string;
   details: string;
+  evidenceId?: string;
   evidenceFileName?: string;
   evidenceSha256?: string;
 };
@@ -50,6 +76,7 @@ export type LotCertificate = {
   certificateNumber: string;
   issuedAt: string;
   validUntil: string;
+  evidenceId?: string;
   evidenceFileName: string;
   evidenceSha256: string;
   recordedBy: string;
@@ -91,6 +118,7 @@ function normalizeLotEvent(value: unknown): LotEvent | null {
       (field) => typeof value[field] === "string",
     ) ||
     (value.evidenceFileName !== undefined && typeof value.evidenceFileName !== "string") ||
+    (value.evidenceId !== undefined && typeof value.evidenceId !== "string") ||
     (value.evidenceSha256 !== undefined && typeof value.evidenceSha256 !== "string")
   ) {
     return null;
@@ -105,6 +133,7 @@ function normalizeLotEvent(value: unknown): LotEvent | null {
     actorRole: isDemoRole(value.actorRole) ? value.actorRole : null,
     organization: value.organization as string,
     details: value.details as string,
+    ...(typeof value.evidenceId === "string" ? { evidenceId: value.evidenceId } : {}),
     ...(typeof value.evidenceFileName === "string"
       ? { evidenceFileName: value.evidenceFileName }
       : {}),
@@ -139,6 +168,7 @@ function normalizeLotCertificate(value: unknown): LotCertificate | null {
     issuedAt: value.issuedAt as string,
     validUntil: value.validUntil as string,
     evidenceFileName: typeof value.evidenceFileName === "string" ? value.evidenceFileName : "",
+    ...(typeof value.evidenceId === "string" ? { evidenceId: value.evidenceId } : {}),
     evidenceSha256: value.evidenceSha256 as string,
     recordedBy: typeof value.recordedBy === "string" ? value.recordedBy : "No registrado",
     recordedByRole: isDemoRole(value.recordedByRole) ? value.recordedByRole : null,
@@ -147,6 +177,53 @@ function normalizeLotCertificate(value: unknown): LotCertificate | null {
         ? value.recordedByOrganization
         : "No registrada",
     recordedAt: value.recordedAt as string,
+  };
+}
+
+function normalizeLotAuditEntry(value: unknown): LotAuditEntry | null {
+  if (
+    !isObject(value) ||
+    !["id", "action", "at", "actor", "reason", "description"].every(
+      (field) => typeof value[field] === "string",
+    ) ||
+    (value.action !== "edited" && value.action !== "deleted") ||
+    !isDemoRole(value.role)
+  ) {
+    return null;
+  }
+
+  return {
+    id: value.id as string,
+    action: value.action,
+    ...(value.target === "lote" || value.target === "evento" || value.target === "certificado"
+      ? { target: value.target }
+      : {}),
+    at: value.at as string,
+    actor: value.actor as string,
+    role: value.role,
+    reason: value.reason as string,
+    description: value.description as string,
+  };
+}
+
+function normalizeLotAuditNote(value: unknown): LotAuditNote | null {
+  if (
+    !isObject(value) ||
+    !["id", "author", "organization", "text", "reason", "createdAt", "updatedAt"].every(
+      (field) => typeof value[field] === "string",
+    )
+  ) {
+    return null;
+  }
+
+  return {
+    id: value.id as string,
+    author: value.author as string,
+    organization: value.organization as string,
+    text: value.text as string,
+    reason: value.reason as string,
+    createdAt: value.createdAt as string,
+    updatedAt: value.updatedAt as string,
   };
 }
 
@@ -170,7 +247,23 @@ function normalizeLotRecord(value: unknown): LotRecord | null {
     createdBy: typeof value.createdBy === "string" ? value.createdBy : "No registrado",
     createdByRole: isDemoRole(value.createdByRole) ? value.createdByRole : null,
     isPublic: typeof value.isPublic === "boolean" ? value.isPublic : false,
+    isDeleted: typeof value.isDeleted === "boolean" ? value.isDeleted : false,
+    ...(typeof value.photoDataUrl === "string" &&
+    /^data:image\/(jpeg|png|webp);base64,/.test(value.photoDataUrl) &&
+    value.photoDataUrl.length <= 3_000_000
+      ? { photoDataUrl: value.photoDataUrl }
+      : {}),
     createdAt: value.createdAt as string,
+    auditHistory: Array.isArray(value.auditHistory)
+      ? value.auditHistory
+          .map(normalizeLotAuditEntry)
+          .filter((entry): entry is LotAuditEntry => entry !== null)
+      : [],
+    auditNotes: Array.isArray(value.auditNotes)
+      ? value.auditNotes
+          .map(normalizeLotAuditNote)
+          .filter((note): note is LotAuditNote => note !== null)
+      : [],
     events: Array.isArray(value.events)
       ? value.events.map(normalizeLotEvent).filter((item): item is LotEvent => item !== null)
       : [],
@@ -348,6 +441,65 @@ export async function getPublicLotRecord(id: string) {
   }
 }
 
+export async function findOwnedLotRecordsByPrefix(prefix: string) {
+  const normalizedPrefix = prefix.trim().toLowerCase();
+  if (!/^[0-9a-f]{8}[0-9a-f-]{0,28}$/.test(normalizedPrefix)) {
+    return { success: false, records: [] as LotRecord[] };
+  }
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    return { success: false, records: [] as LotRecord[] };
+  }
+
+  try {
+    const { data, error } = await supabase.from("traceability_lots").select("record").limit(1000);
+    if (error) {
+      return { success: false, records: [] as LotRecord[] };
+    }
+
+    const records = data
+      .map((row) => normalizeLotRecord(row.record))
+      .filter((record): record is LotRecord => record !== null)
+      .filter(
+        (record) => !record.isDeleted && record.id.toLowerCase().startsWith(normalizedPrefix),
+      );
+    return { success: true, records };
+  } catch {
+    return { success: false, records: [] as LotRecord[] };
+  }
+}
+
+export async function findPublicLotRecordsByPrefix(prefix: string, product: string) {
+  const normalizedPrefix = prefix.trim().toLowerCase();
+  if (!/^[0-9a-f]{8}[0-9a-f-]{0,28}$/.test(normalizedPrefix)) {
+    return { success: false, records: [] as LotRecord[] };
+  }
+
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) {
+    return { success: false, records: [] as LotRecord[] };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc("find_public_traceability_lots_by_prefix", {
+      p_id_prefix: normalizedPrefix,
+      p_product: product,
+    });
+    if (error || !Array.isArray(data)) {
+      return { success: false, records: [] as LotRecord[] };
+    }
+
+    const rows: unknown[] = data;
+    const records = rows
+      .map((row: unknown) => (isObject(row) ? normalizeLotRecord(row.public_record) : null))
+      .filter((record): record is LotRecord => record !== null);
+    return { success: true, records, hasMore: records.length > 20 };
+  } catch {
+    return { success: false, records: [] as LotRecord[] };
+  }
+}
+
 export async function saveLotRecord(record: LotRecord) {
   const supabase = getSupabaseBrowserClient();
   if (!supabase) {
@@ -417,6 +569,23 @@ export function addOrganizationMember(member: OrganizationMember) {
   try {
     window.localStorage.setItem(memberStorageKey, JSON.stringify(members));
     memberSnapshot = members;
+    notifySubscribers();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function updateOrganizationMember(member: OrganizationMember) {
+  const members = getMemberSnapshot();
+  if (!members.some((current) => current.id === member.id)) {
+    return false;
+  }
+
+  const updatedMembers = members.map((current) => (current.id === member.id ? member : current));
+  try {
+    window.localStorage.setItem(memberStorageKey, JSON.stringify(updatedMembers));
+    memberSnapshot = updatedMembers;
     notifySubscribers();
     return true;
   } catch {

@@ -1,19 +1,39 @@
 "use client";
 
 import { ArrowRight, LockKey } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { roleLabels } from "@/components/organization-members/OrganizationMembers";
 import { RecordsPanel } from "@/components/records-panel/RecordsPanel";
+import {
+  demoRoles,
+  findOwnedLotRecordsByPrefix,
+  findPublicLotRecordsByPrefix,
+  type DemoRole,
+  type LotRecord,
+} from "@/lib/lots/lot-storage";
+import { saveProductNotificationPreference } from "@/lib/lots/product-notifications";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const supabase = getSupabaseBrowserClient();
 
-type AccessStage = "credentials" | "dashboard" | "resetPassword";
+type AccessStage =
+  "credentials" | "workflowPreferences" | "lotLookup" | "dashboard" | "resetPassword";
 type AuthMode = "signIn" | "signUp";
+const productOptions = ["Café orgánico", "Cacao orgánico", "Algodón orgánico"];
+const workflowRoleEventName = "trazabilichain:workflow-role-change";
 
 export function RecordsAuth() {
+  const router = useRouter();
   const [stage, setStage] = useState<AccessStage>("credentials");
   const [mode, setMode] = useState<AuthMode>("signIn");
+  const [workflowRole, setWorkflowRole] = useState<DemoRole>("producer");
+  const [selectedProduct, setSelectedProduct] = useState(productOptions[0]);
+  const [lotPrefix, setLotPrefix] = useState("");
+  const [candidates, setCandidates] = useState<LotRecord[]>([]);
+  const [selectedLotId, setSelectedLotId] = useState("");
+  const [isSearchingLots, setIsSearchingLots] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -40,7 +60,7 @@ export function RecordsAuth() {
         session = null;
       }
       if (isMounted) {
-        setStage(session ? "dashboard" : "credentials");
+        setStage(session ? "workflowPreferences" : "credentials");
       }
     });
 
@@ -49,8 +69,14 @@ export function RecordsAuth() {
         setStage("resetPassword");
         return;
       }
+      if (event === "INITIAL_SESSION") {
+        setStage(session && !session.user.is_anonymous ? "workflowPreferences" : "credentials");
+        return;
+      }
       const accountSession = session && !session.user.is_anonymous;
-      setStage(accountSession ? "dashboard" : "credentials");
+      setStage(
+        accountSession ? (workflowRole === "producer" ? "dashboard" : "lotLookup") : "credentials",
+      );
       if (event === "SIGNED_IN" && accountSession) {
         toast.success("Acceso confirmado.");
       }
@@ -60,7 +86,20 @@ export function RecordsAuth() {
       isMounted = false;
       data.subscription.unsubscribe();
     };
-  }, []);
+  }, [workflowRole]);
+
+  function continueAfterAuthentication() {
+    void saveProductNotificationPreference(selectedProduct);
+    setStage(workflowRole === "producer" ? "dashboard" : "lotLookup");
+  }
+
+  function selectWorkflowRole(value: string) {
+    const selectedRole = value as DemoRole;
+    setWorkflowRole(selectedRole);
+    window.dispatchEvent(
+      new CustomEvent(workflowRoleEventName, { detail: { role: selectedRole } }),
+    );
+  }
 
   async function submitCredentials(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,7 +119,7 @@ export function RecordsAuth() {
         if (error) {
           notify("No se pudo crear la cuenta. Revisa los datos e inténtalo de nuevo.");
         } else if (data.session) {
-          setStage("dashboard");
+          continueAfterAuthentication();
           toast.success("Cuenta creada. Ya puedes usar el dashboard.");
         } else {
           notify(
@@ -95,7 +134,7 @@ export function RecordsAuth() {
         if (error) {
           notify("No se pudo iniciar sesión. Revisa el correo y la contraseña.");
         } else {
-          setStage("dashboard");
+          continueAfterAuthentication();
         }
       }
     } catch {
@@ -160,7 +199,7 @@ export function RecordsAuth() {
       } else {
         setPassword("");
         setConfirmPassword("");
-        setStage("dashboard");
+        continueAfterAuthentication();
         toast.success("Contraseña actualizada.");
       }
     } catch {
@@ -179,10 +218,77 @@ export function RecordsAuth() {
       }
       setStage("credentials");
       setPassword("");
+      setCandidates([]);
+      setSelectedLotId("");
+      setLotPrefix("");
       toast.success("Sesión cerrada.");
     } catch {
       notify("No se pudo cerrar la sesión. Comprueba tu conexión e inténtalo de nuevo.");
     }
+  }
+
+  async function searchLotPrefix(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+    const normalizedPrefix = lotPrefix.trim().toLowerCase();
+    if (!/^[0-9a-f]{8}[0-9a-f-]{0,28}$/.test(normalizedPrefix)) {
+      notify("Escribe al menos los primeros 8 caracteres hexadecimales del ID del QR.");
+      return;
+    }
+
+    setIsSearchingLots(true);
+    setCandidates([]);
+    setSelectedLotId("");
+    try {
+      const result =
+        workflowRole === "consumer"
+          ? await findPublicLotRecordsByPrefix(normalizedPrefix, selectedProduct)
+          : await findOwnedLotRecordsByPrefix(normalizedPrefix);
+      if (!result.success) {
+        notify("No se pudo consultar el lote. Verifica la conexión e inténtalo de nuevo.");
+        return;
+      }
+
+      const productMatches = result.records.filter((record) => record.product === selectedProduct);
+      if ("hasMore" in result && result.hasMore) {
+        notify(
+          "Hay muchas coincidencias. Escribe más caracteres del ID para precisar la búsqueda.",
+        );
+        return;
+      }
+      if (productMatches.length === 0) {
+        notify(
+          "No encontramos un lote de ese producto con ese prefijo y los permisos de esta cuenta.",
+        );
+        return;
+      }
+
+      setCandidates(productMatches);
+      setSelectedLotId(productMatches.length === 1 ? productMatches[0].id : "");
+      if (productMatches.length > 1) {
+        notify(
+          "El prefijo coincide con varios lotes. Selecciona el correcto antes de continuar.",
+          "info",
+        );
+      }
+    } catch {
+      notify("No se pudo consultar el lote. Inténtalo de nuevo.");
+    } finally {
+      setIsSearchingLots(false);
+    }
+  }
+
+  function continueToSelectedLot() {
+    if (!selectedLotId) {
+      notify("Selecciona un lote para continuar.");
+      return;
+    }
+    if (workflowRole === "consumer") {
+      router.push(`/lote/${encodeURIComponent(selectedLotId)}`);
+      return;
+    }
+    setMessage("");
+    setStage("dashboard");
   }
 
   if (stage === "dashboard") {
@@ -201,8 +307,175 @@ export function RecordsAuth() {
             Cerrar sesión
           </button>
         </div>
-        <RecordsPanel />
+        <RecordsPanel
+          initialRole={workflowRole}
+          initialProduct={selectedProduct}
+          selectedLotId={workflowRole === "producer" ? undefined : selectedLotId}
+        />
       </>
+    );
+  }
+
+  if (stage === "workflowPreferences") {
+    return (
+      <section className="mx-auto max-w-xl border border-line bg-white p-5 shadow-[0_24px_80px_-48px_rgba(25,51,50,0.5)] sm:p-8">
+        <p className="mb-2 text-[11px] font-bold text-accent">ÁREA DE TRABAJO</p>
+        <h1 className="mb-2 font-display text-2xl font-medium text-ink">
+          Elige tu perfil de trabajo
+        </h1>
+        <p className="mb-5 text-sm leading-6 text-gray-700">
+          Esta selección cambia las herramientas disponibles, pero no modifica los permisos de tu
+          cuenta.
+        </p>
+        <div className="grid gap-4">
+          <div className="grid gap-1.5">
+            <label htmlFor="session-workflow-profile" className="text-sm font-semibold text-ink">
+              Perfil de trabajo
+            </label>
+            <select
+              id="session-workflow-profile"
+              value={workflowRole}
+              onChange={(event) => selectWorkflowRole(event.target.value)}
+              className="min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink"
+            >
+              {demoRoles.map((demoRole) => (
+                <option key={demoRole} value={demoRole}>
+                  {roleLabels[demoRole]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-1.5">
+            <label htmlFor="session-workflow-product" className="text-sm font-semibold text-ink">
+              Producto o lote
+            </label>
+            <select
+              id="session-workflow-product"
+              value={selectedProduct}
+              onChange={(event) => setSelectedProduct(event.target.value)}
+              className="min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink"
+            >
+              {productOptions.map((product) => (
+                <option key={product} value={product}>
+                  {product}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap justify-between gap-3 pt-2">
+            <button
+              type="button"
+              onClick={signOut}
+              className="min-h-11 rounded-md border border-line px-4 text-sm font-semibold text-ink hover:bg-paper"
+            >
+              Cerrar sesión
+            </button>
+            <button
+              type="button"
+              onClick={continueAfterAuthentication}
+              className="min-h-11 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746]"
+            >
+              Continuar
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (stage === "lotLookup") {
+    return (
+      <section className="mx-auto max-w-2xl border border-line bg-white p-5 shadow-[0_24px_80px_-48px_rgba(25,51,50,0.5)] sm:p-8">
+        <p className="mb-2 text-[11px] font-bold text-accent">SELECCIÓN DE LOTE</p>
+        <h1 className="mb-2 font-display text-2xl font-medium text-ink">Identifica el lote</h1>
+        <p className="mb-5 text-sm leading-6 text-gray-700">
+          Perfil: {roleLabels[workflowRole]} · Producto: {selectedProduct}. El prefijo sirve para
+          buscar, no para comprobar identidad ni permisos.
+        </p>
+        <form className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto]" onSubmit={searchLotPrefix}>
+          <div className="grid min-w-0 gap-1.5">
+            <label htmlFor="lot-qr-prefix" className="text-sm font-semibold text-ink">
+              Primeros 8 caracteres del ID del QR
+            </label>
+            <input
+              id="lot-qr-prefix"
+              required
+              minLength={8}
+              maxLength={36}
+              pattern="[0-9a-fA-F]{8}[0-9a-fA-F-]{0,28}"
+              autoComplete="off"
+              spellCheck={false}
+              value={lotPrefix}
+              onChange={(event) => setLotPrefix(event.target.value)}
+              className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 font-mono text-sm text-ink"
+              aria-describedby="lot-prefix-help"
+            />
+            <p id="lot-prefix-help" className="mb-0 text-xs leading-5 text-gray-700">
+              Puedes escribir más caracteres si aparecen varias coincidencias.
+            </p>
+          </div>
+          <button
+            type="submit"
+            disabled={isSearchingLots}
+            className="min-h-11 self-end rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746] disabled:cursor-wait disabled:opacity-60"
+          >
+            {isSearchingLots ? "Buscando…" : "Buscar lote"}
+          </button>
+        </form>
+        {candidates.length > 0 && (
+          <fieldset className="mt-5 grid gap-2">
+            <legend className="mb-2 text-sm font-semibold text-ink">Coincidencias</legend>
+            {candidates.map((record) => (
+              <label
+                key={record.id}
+                className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border border-line p-3 text-sm hover:bg-paper"
+              >
+                <input
+                  type="radio"
+                  name="matched-lot"
+                  value={record.id}
+                  checked={selectedLotId === record.id}
+                  onChange={() => setSelectedLotId(record.id)}
+                  className="mt-1 size-4 accent-accent"
+                />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-ink">
+                    {record.product} · {record.origin}
+                  </span>
+                  <span className="mt-1 block break-all font-mono text-xs text-gray-700">
+                    {record.id}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+        {message && (
+          <p
+            className={`mt-4 mb-0 text-sm ${messageType === "info" ? "text-gray-700" : "text-red-800"}`}
+            role={messageType === "error" ? "alert" : "status"}
+          >
+            {message}
+          </p>
+        )}
+        <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-line pt-4">
+          <button
+            type="button"
+            onClick={signOut}
+            className="min-h-10 rounded-md border border-line px-3 text-sm font-semibold text-ink hover:bg-paper"
+          >
+            Cerrar sesión
+          </button>
+          <button
+            type="button"
+            disabled={!selectedLotId || isSearchingLots}
+            onClick={continueToSelectedLot}
+            className="min-h-10 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {workflowRole === "consumer" ? "Consultar lote" : "Continuar al perfil"}
+          </button>
+        </div>
+      </section>
     );
   }
 
@@ -302,6 +575,43 @@ export function RecordsAuth() {
                 : "Ingresa tu correo y contraseña para acceder a tus lotes."}
             </p>
             <form className="grid gap-4" onSubmit={submitCredentials}>
+              <div className="grid gap-1.5">
+                <label htmlFor="workflow-profile" className="text-sm font-semibold text-ink">
+                  Perfil de trabajo
+                </label>
+                <select
+                  id="workflow-profile"
+                  required
+                  value={workflowRole}
+                  onChange={(event) => selectWorkflowRole(event.target.value)}
+                  className="min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink"
+                >
+                  {demoRoles.map((demoRole) => (
+                    <option key={demoRole} value={demoRole}>
+                      {roleLabels[demoRole]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-1.5">
+                <label htmlFor="workflow-product" className="text-sm font-semibold text-ink">
+                  Producto o lote
+                </label>
+                <select
+                  id="workflow-product"
+                  required
+                  value={selectedProduct}
+                  onChange={(event) => setSelectedProduct(event.target.value)}
+                  className="min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink"
+                >
+                  <option value="">Selecciona un producto</option>
+                  {productOptions.map((product) => (
+                    <option key={product} value={product}>
+                      {product}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="grid gap-1.5">
                 <label htmlFor="account-email" className="text-sm font-semibold text-ink">
                   Correo electrónico

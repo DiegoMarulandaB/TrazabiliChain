@@ -3,6 +3,7 @@
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export function ConsumerScanner() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export function ConsumerScanner() {
   const [isScanning, setIsScanning] = useState(false);
   const [identifier, setIdentifier] = useState("");
   const [message, setMessage] = useState("");
+  const [isCameraConfirmationOpen, setIsCameraConfirmationOpen] = useState(false);
 
   function stopScanning() {
     controlsRef.current?.stop();
@@ -122,7 +124,7 @@ export function ConsumerScanner() {
       ) : (
         <button
           type="button"
-          onClick={startScanning}
+          onClick={() => setIsCameraConfirmationOpen(true)}
           className="mt-5 min-h-11 cursor-pointer rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746]"
         >
           Activar cámara
@@ -150,6 +152,17 @@ export function ConsumerScanner() {
           Consultar
         </button>
       </form>
+      <ConfirmDialog
+        open={isCameraConfirmationOpen}
+        title="Permitir el uso de la cámara"
+        description="La cámara se usará para leer el código QR del lote. Después de aceptar, el navegador también solicitará permiso."
+        confirmLabel="Aceptar"
+        onCancel={() => setIsCameraConfirmationOpen(false)}
+        onConfirm={() => {
+          setIsCameraConfirmationOpen(false);
+          void startScanning();
+        }}
+      />
       <p className="mt-3 min-h-5 text-sm text-accent" role="status" aria-live="polite">
         {message}
       </p>

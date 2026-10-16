@@ -4,6 +4,35 @@ El principal aprendizaje es que la inmutabilidad no resuelve por sí sola la con
 
 Antes del cierre, por impacto y esfuerzo, priorizamos: 1) habilitar acceso por correo/contraseña y verificar RLS por usuario; 2) validar persistencia y QR público opt-in con un lote real; 3) conservar los campos públicos permitidos; 4) mantener actor/organización declarados y hashes en cronología; 5) publicar el WASM Soroban actualizado tras revisar la transacción. Anonymous Sign-Ins permanece apagado. La migración actualizada ya se ejecutó; el TTL nuevo no está desplegado. Los archivos siguen locales y el escrow sigue opcional.
 
+# Mejoras de interfaz implementadas
+
+Cada perfil muestra una guía accesible de dos pasos con el propósito del rol y explicación de sus campos. Crear lotes, eventos, certificados, autorizaciones y simulaciones de escrow requiere confirmación antes de continuar; la cámara muestra su aviso antes del permiso del navegador.
+
+El productor elige café, cacao o algodón orgánicos y registra atributos, ubicación y foto opcional. El control de archivo permite cambiar o quitar la imagen y muestra su nombre y vista previa. La foto es privada salvo que el dueño publique el lote y esté aplicada la migración de proyección pública. Los errores obligatorios aparecen junto al campo.
+
+El historial del Productor muestra métricas distintas de lotes activos y retirados; los retirados aparecen en una sección plegable y no incrementan el conteo activo. La campana se oculta en este perfil. Los otros perfiles reciben notificaciones privadas del cultivo elegido solo cuando se publica un lote del mismo cultivo. Para activar avisos deben aplicarse `202610160003_product_notifications.sql` y `202610160004_cleanup_product_notifications.sql`.
+
+## Autenticación y perfiles
+
+En la demo, una cuenta de correo/contraseña puede elegir cualquiera de los perfiles disponibles. El selector cambia la interfaz, pero no concede permisos; Supabase RLS limita los lotes privados al `auth.uid()` de la cuenta. Para producción se requiere una identidad y un rol verificado por perfil, credenciales no compartidas entre perfiles y políticas RLS por organización. Esa autenticación independiente todavía no está implementada.
+
+Las ediciones de demo se limitan a registros propios: Productor gestiona lotes; Actor de cadena, sus eventos; Certificador, sus certificados; Administrador, miembros del directorio local de la organización declarada; Auditor, sus notas privadas, no los datos fuente. Comprador solo cambia el borrador de escrow antes de la firma; un contrato desplegado no se edita desde el formulario. El directorio local y la selección de rol no son controles de autorización.
+
+La migración `202610160001_public_lot_prefix_lookup.sql` ya está aplicada. Consumidor busca solo fichas publicadas por producto; los perfiles internos consultan lotes propios bajo RLS.
+
+## Criterios de revisión
+
+- Verificar los pasos de guía y las acciones de los diálogos con teclado; `Escape`, cerrar y cancelar no deben ejecutar la operación.
+- Registrar cada cultivo, seleccionar sus atributos y probar ubicaciones de distintos países y una localidad ingresada manualmente.
+- Añadir, cambiar y quitar la foto opcional; comprobar que la evidencia de evento se puede omitir y que el archivo de certificado no.
+- Enviar cada formulario con campos vacíos y confirmar que el mensaje aparece junto al control faltante y desaparece al corregirlo.
+- Publicar un lote con foto y comprobar que la imagen no aparece en su ficha QR pública.
+- Confirmar que una contraseña incorrecta no altera el lote; comprobar que editar registra motivo y que retirar despublica el QR sin borrar el historial.
+- Verificar que los lotes retirados no se cuentan como activos y que solo el perfil Productor ve su sección plegable de retirados.
+- Cambiar el cultivo de interés y comprobar que la campana muestra solo avisos de ese cultivo y permanece oculta en Productor.
+- Probar que el selector de perfil no concede autorización y que RLS impide ver lotes de otro propietario.
+- Revisar el formulario en móvil/tablet: sin desbordamiento horizontal, valores de fecha visibles, etiquetas legibles y lector de pantalla.
+
 # Riesgos y pendientes
 
 El repositorio contiene `supabase/migrations/202610150001_traceability_lots.sql`, con políticas RLS por `owner_id = auth.uid()` y una vista pública de campos permitidos. La migración actualizada se ejecutó: la vista responde HTTP 200 sin filas y el acceso anónimo a la tabla devuelve HTTP 401. `/registros` requiere cuenta de correo/contraseña, pero no Anonymous Sign-Ins. Confirm Email está desactivado. Supabase Auth guarda el email y un hash de contraseña; la aplicación no guarda contraseñas. Nunca incluyas `service_role` en el navegador.

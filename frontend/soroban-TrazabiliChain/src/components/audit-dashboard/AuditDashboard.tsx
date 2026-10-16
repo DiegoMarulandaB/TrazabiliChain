@@ -1,6 +1,7 @@
 import type { LotRecord } from "@/lib/lots/lot-storage";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
 import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
+import { AuditNotePanel } from "@/components/audit-dashboard/AuditNotePanel";
 
 type AuditEntry = {
   lot: LotRecord;
@@ -35,7 +36,15 @@ function auditFindings({ lot, event }: AuditEntry) {
   return findings;
 }
 
-export function AuditDashboard({ records }: { records: LotRecord[] }) {
+export function AuditDashboard({
+  records,
+  actorName,
+  organization,
+}: {
+  records: LotRecord[];
+  actorName: string;
+  organization: string;
+}) {
   const entries: AuditEntry[] = records
     .flatMap((lot) => lot.events.map((event) => ({ lot, event })))
     .sort((first, second) => second.event.recordedAt.localeCompare(first.event.recordedAt));
@@ -100,7 +109,10 @@ export function AuditDashboard({ records }: { records: LotRecord[] }) {
               )}
               {event.evidenceFileName && (
                 <div className="mt-2">
-                  <EvidenceFileLink evidenceId={event.id} fileName={event.evidenceFileName} />
+                  <EvidenceFileLink
+                    evidenceId={event.evidenceId ?? event.id}
+                    fileName={event.evidenceFileName}
+                  />
                 </div>
               )}
               {findings.length > 0 ? (
@@ -123,6 +135,26 @@ export function AuditDashboard({ records }: { records: LotRecord[] }) {
           </li>
         )}
       </ol>
+      <section className="mt-8 border-t border-line pt-6" aria-label="Notas de auditoría por lote">
+        <h3 className="mb-4 text-lg font-semibold text-ink">Observaciones por lote</h3>
+        <div className="grid gap-4">
+          {records
+            .filter((record) => !record.isDeleted)
+            .map((record) => (
+              <article key={record.id} className="min-w-0 border-b border-line pb-4">
+                <h4 className="mb-0 text-sm font-semibold text-ink">
+                  {record.product} · {record.id.slice(0, 8)}
+                </h4>
+                <AuditNotePanel record={record} author={actorName} organization={organization} />
+              </article>
+            ))}
+          {records.length === 0 && (
+            <p className="mb-0 text-sm text-gray-700">
+              Busca un lote propio para dejar una observación privada.
+            </p>
+          )}
+        </div>
+      </section>
     </section>
   );
 }

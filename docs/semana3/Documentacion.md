@@ -2,7 +2,7 @@
 
 ## 1. Propósito
 
-El frontend contiene el flujo MVP para registrar lotes, eventos y certificados, consultar fichas QR y anclar huellas SHA-256 en Stellar Testnet. `/registros` solicita cuenta Supabase con correo y contraseña, sin Google ni OTP de inicio de sesión; incluye recuperación mediante enlace de Supabase. Las contraseñas admiten de 15 a 64 caracteres. Supabase Auth guarda el correo y un hash de la contraseña; el frontend nunca persiste la contraseña. Confirm Email está desactivado. La migración actualizada está ejecutada: la vista QR responde HTTP 200 con dos fichas públicas y la tabla privada rechaza consultas `anon` con HTTP 401. Se verificó una ficha con datos y SVG. Falta probar alta/guardado autenticado y recuperación de contraseña. Los archivos de evidencia y el directorio de miembros permanecen locales.
+El frontend contiene el flujo MVP para registrar lotes, eventos y certificados, consultar fichas QR y anclar huellas SHA-256 en Stellar Testnet. `/registros` solicita cuenta Supabase con correo y contraseña, sin Google ni OTP de inicio de sesión; incluye recuperación mediante enlace de Supabase. Las contraseñas admiten de 15 a 64 caracteres. Supabase Auth guarda el correo y un hash de la contraseña; el frontend nunca persiste la contraseña. Confirm Email está desactivado. En la demo, la misma cuenta autenticada puede seleccionar cualquiera de los perfiles desde la interfaz; el perfil no es una identidad ni una autorización. RLS limita los datos privados al propietario de la cuenta. La migración base está aplicada; la vista QR responde HTTP 200 con fichas públicas y la tabla privada rechaza consultas `anon` con HTTP 401. Aún falta una prueba completa de roles y notificaciones con cuentas autenticadas.
 
 La aplicación está en `frontend/soroban-TrazabiliChain`. El crate `traceability-registry` guarda hashes append-only y emite eventos; el frontend lo invoca mediante Stellar RPC. Trustless Work se integra de forma opcional para pagos B2B por hitos, fuera del flujo principal de trazabilidad.
 
@@ -14,6 +14,7 @@ La aplicación está en `frontend/soroban-TrazabiliChain`. El crate `traceabilit
 - GSAP y `@gsap/react` para animaciones.
 - `qrcode.react` para generar los códigos QR en el navegador.
 - `@zxing/browser` para escanear códigos QR con la cámara.
+- `country-state-city` para catálogos de regiones y ciudades según el país seleccionado.
 - Phosphor Icons para los iconos de redes y acciones.
 - `@creit.tech/stellar-wallets-kit` para conectar wallets y solicitar firmas.
 - `@stellar/stellar-sdk` para RPC Soroban, simulación, tarifas y envío de transacciones.
@@ -79,6 +80,8 @@ El árbol actual ya separa responsabilidades por capas: `src/app` contiene rutas
 | `src/app/opengraph-image.tsx`                                     | Genera una imagen social de 1200 × 630 píxeles mediante `next/og`.              |
 | `src/components/header/Header.tsx`                                | Navegación adaptable y enlace para saltar al contenido.                         |
 | `src/components/records-panel/RecordsPanel.tsx`                   | Dashboard, validación, historial y creación de lotes.                           |
+| `src/components/records-panel/RoleGuide.tsx`                      | Guía de dos pasos con explicación del rol y sus campos.                         |
+| `src/components/records-panel/LotManagement.tsx`                  | Edición, baja lógica y registro de cambios por lote.                            |
 | `src/components/records-auth/RecordsAuth.tsx`                     | Registro e inicio de sesión por correo y contraseña, sin Google ni OTP.         |
 | `src/components/records-auth/AnonymousRecordsSession.tsx`         | Componente legado; no se monta en `/registros`.                                 |
 | `src/components/organization-members/TraceabilityActorAccess.tsx` | Autoriza o revoca direcciones on-chain desde la wallet administradora.          |
@@ -87,6 +90,9 @@ El árbol actual ya separa responsabilidades por capas: `src/app` contiene rutas
 | `src/components/traceability-anchor/TraceabilityAnchor.tsx`       | Ancla la huella del lote y enlaza la transacción confirmada.                    |
 | `src/components/escrow/TrustlessWorkEscrow.tsx`                   | Flujo opcional B2B de escrow por hitos en Testnet.                              |
 | `src/components/ui/feedback/Toaster.tsx`                          | Toaster global de Sonner.                                                       |
+| `src/components/ui/ConfirmDialog.tsx`                             | Diálogo nativo reutilizable para confirmar acciones.                            |
+| `src/components/ui/FileUploadField.tsx`                           | Selector de archivos accesible con nombre, cambio y eliminación.                |
+| `src/components/ui/FormFieldError.tsx`                            | Mensaje inline enlazado al campo inválido.                                      |
 | `src/components/ui/motion/BorderBeamFrame.tsx`                    | Efecto de borde del dashboard respetando movimiento reducido.                   |
 | `src/components/lot-sharing/LotSharing.tsx`                       | QR y opciones para compartir el enlace.                                         |
 | `src/components/public-lot/PublicLotPage.tsx`                     | Consulta pública desde la vista permitida de Supabase.                          |
@@ -98,6 +104,7 @@ El árbol actual ya separa responsabilidades por capas: `src/app` contiene rutas
 | `src/components/audit-dashboard/AuditDashboard.tsx`               | Cronología global y alertas básicas de consistencia.                            |
 | `src/components/evidence-file/EvidenceFileLink.tsx`               | Descarga local de archivos de evidencia asociados a lotes o eventos.            |
 | `src/lib/lots/lot-storage.ts`                                     | Persistencia Supabase de lotes y metadatos; miembros de demostración locales.   |
+| `src/lib/lots/country-options.ts`                                 | Opciones de países con nombres en español y códigos ISO.                        |
 | `src/lib/lots/evidence-storage.ts`                                | Archivos de evidencia locales en IndexedDB.                                     |
 | `src/lib/stellar/read.ts`                                         | Lecturas RPC de conteo y hashes del contrato de trazabilidad.                   |
 | `src/lib/stellar/write.ts`                                        | Construcción, simulación, firma, envío y confirmación Soroban.                  |
@@ -122,21 +129,35 @@ El productor registra producto, características, origen, fecha y organización 
 
 La sesión de cuenta Supabase permite volver a iniciar sesión desde otro dispositivo. `useLotRecords` publica en React el snapshot después de lecturas y escrituras remotas.
 
+La foto opcional del producto se guarda como dato del lote en el registro privado de Supabase, protegido por RLS del propietario. La migración `202610160002_public_lot_product_photo.sql` la incluye en la proyección solo cuando el dueño publica el lote; el productor también puede cambiarla o quitarla al editar. Los archivos PDF e imagen adjuntos como evidencia de eventos o certificados continúan en almacenamiento local.
+
+La migración `202610160001_public_lot_prefix_lookup.sql`, aplicada en Supabase, añade la búsqueda por prefijo del ID y producto sobre `public_traceability_lots`; no consulta la tabla privada ni concede permisos. Los perfiles internos siguen dependiendo de RLS para recuperar lotes propios.
+
 ## 6. Flujos asociados a las historias de usuario
 
-Al abrir `/registros`, el panel permite recorrer los siguientes perfiles de trabajo. Los perfiles son declaraciones locales de flujo, no roles de seguridad.
+Al abrir `/registros`, el panel permite recorrer los siguientes perfiles de trabajo. En la demo, una misma cuenta Supabase puede seleccionar cualquiera; los perfiles son declaraciones locales de flujo, no roles de seguridad.
 
-| Historia                      | Flujo disponible                                                                                                                                                                         |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Productor                     | Crea el lote con origen y características; se genera ID y QR.                                                                                                                            |
-| Actor de cadena               | Selecciona un lote y registra tipo, fecha/hora ocurrida, detalle, actor, rol y organización declarados; puede adjuntar evidencia opcional. La fecha de captura también queda registrada. |
-| Certificador                  | Asocia nombre, emisor, número y vigencia declarados; selecciona un archivo PDF/imagen. Se captura quién lo asoció, se calcula SHA-256 y el archivo se conserva en IndexedDB local.       |
-| Consumidor                    | Escanea el QR con cámara tras conceder permiso, o escribe su ID/URL. La ficha pública muestra datos declarados, cronología, certificados y huellas, sin publicar archivos.               |
-| Administrador de organización | Añade o quita miembros de un directorio local y asigna uno de los roles de demo.                                                                                                         |
-| Comprador B2B                 | Busca lotes y evidencia declarada; puede preparar un escrow opcional por hitos con Trustless Work en Testnet. La identidad del emisor no se autentica.                                   |
-| Auditor                       | Revisa eventos ordenados por fecha de captura y recibe alertas básicas por fechas inconsistentes, rol ausente o eventos duplicados.                                                      |
+| Historia                      | Flujo disponible                                                                                                                                                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Productor                     | Crea, edita o retira sus lotes; el historial separa activos y retirados. La baja lógica despublica la ficha y conserva el historial de auditoría.                                                                         |
+| Actor de cadena               | Selecciona un lote y registra tipo, fecha/hora ocurrida, detalle, actor, rol y organización declarados; puede adjuntar evidencia opcional. Puede editar sus propios eventos.                                              |
+| Certificador                  | Asocia nombre, emisor, número y vigencia declarados; selecciona un archivo PDF/imagen. Se captura quién lo asoció, se calcula SHA-256 y el archivo se conserva en IndexedDB local. Puede editar sus propios certificados. |
+| Consumidor                    | Escanea el QR con cámara tras conceder permiso, o escribe su ID/URL. La ficha pública muestra datos declarados, cronología, certificados y huellas, sin publicar archivos.                                                |
+| Administrador de organización | Añade, edita o quita miembros del directorio local filtrado por la organización declarada; no es un límite de autorización real.                                                                                          |
+| Comprador B2B                 | Busca lotes y evidencia declarada; puede editar los parámetros del borrador de escrow antes de simularlo. Un contrato ya firmado/desplegado no se modifica desde el formulario.                                           |
+| Auditor                       | Revisa eventos ordenados por fecha de captura y recibe alertas básicas por fechas inconsistentes, rol ausente o eventos duplicados. Puede editar sus observaciones privadas, no la evidencia fuente.                      |
 
 Los eventos aceptan evidencia opcional con huella SHA-256. Se evita repetir el mismo evento y se rechaza asociar al lote el mismo número de certificado con la misma huella. Las alertas son comprobaciones simples de consistencia, no detección de fraude. La vigencia, identidad del certificador y legitimidad del documento son declaraciones sin verificación externa. Para usar la cámara se requiere un contexto seguro (HTTPS o localhost) y permiso explícito del navegador.
+
+El Productor edita o retira sus lotes; el historial separa los activos de los retirados y no cuenta las bajas lógicas como activos. Actor de cadena puede editar sus eventos propios (autor, rol y organización declarados coincidentes) y Certificador los certificados que registró. Administrador edita el directorio local de la organización declarada. Auditor puede añadir y editar sus observaciones privadas, pero no reescribe la evidencia fuente. Comprador edita parámetros de escrow antes de firmar; el formulario no edita contratos ya desplegados.
+
+El productor puede elegir café, cacao o algodón orgánicos; completar variedad, cosecha, calidad, valor/divisa y unidad, además de otros datos manuales. El origen separa finca, ciudad, región y país. Los catálogos geográficos muestran códigos y permiten escribir manualmente localidades ausentes. Cada perfil dispone de una guía que explica su rol y los campos de su formulario. Crear lote, agregar evento, asociar certificado, autorizar/revocar una wallet y preparar/simular escrow requieren confirmación antes de ejecutar la operación. La cámara solicita confirmación antes de que el navegador muestre su petición de permiso.
+
+El historial del Productor separa lotes activos de retirados, con métricas diferentes; los retirados aparecen en una sección plegable y no se cuentan como activos. La campana se oculta al elegir Productor. Para los demás perfiles, las notificaciones son privadas por cuenta y filtradas por el cultivo seleccionado; solo se generan cuando un lote de ese cultivo se publica. Las migraciones `202610160003_product_notifications.sql` y `202610160004_cleanup_product_notifications.sql` deben aplicarse en Supabase para activar avisos y limpiar avisos obsoletos.
+
+Las credenciales compartidas entre perfiles son solo una comodidad de demo: el selector no autentica ni autoriza un rol. Para producción, cada perfil deberá tener identidad y credenciales propias con rol verificado en servidor y políticas RLS por organización; esas membresías y restricciones aún no están implementadas.
+
+Los campos obligatorios muestran el error junto al control que falta y lo asocian con `aria-describedby`; al corregirlo desaparece el mensaje y el foco llega al primer campo pendiente. El selector de foto oculta el control nativo del navegador: presenta acciones localizadas para seleccionar/cambiar/quitar y el nombre del archivo. La imagen de producto es opcional; la evidencia de evento también, mientras que el archivo del certificado es obligatorio. Los tres controles permiten reemplazar o quitar el archivo antes de guardar.
 
 ## 7. QR y opciones de compartir
 
@@ -157,7 +178,9 @@ El disclosure **Compartir** ofrece correo electrónico, X, LinkedIn, Instagram y
 - El foco visible se define globalmente y las vistas usan layouts adaptables de Tailwind.
 - El SplashScreen y las animaciones de GSAP respetan `prefers-reduced-motion`.
 - El escáner anuncia estados, permite detener la cámara y ofrece entrada manual como alternativa.
+- Los diálogos se implementan con `<dialog>` modal nativo, nombre y descripción accesibles, cierre y cancelación; `Escape` cierra sin ejecutar la operación. Selectores, casillas y acciones habilitados muestran cursor de mano, mientras las tarjetas de lote no anuncian una acción que no tienen.
 - Los controles de formulario mantienen 16 px para evitar el zoom de foco en móvil/tablet; los placeholders se ocultan visualmente al enfocar y la fecha tiene una referencia accesible `dd/mm/aaaa`.
+- Los mensajes de validación inline usan `role="alert"`, `aria-invalid` y `aria-describedby`; los controles de archivo son accionables por teclado y anuncian el nombre y los errores.
 
 ## 9. SEO y metadatos sociales
 
@@ -187,7 +210,7 @@ La referencia es [OWASP Top 10:2025](https://top10.owasp.org/2025/). Esta aplica
 - **A06 Insecure Design:** la ficha QR es opt-in y se explican datos declarados. No hay identidad organizacional verificada ni protección contra el problema del oráculo físico.
 - **A07 Authentication Failures:** correo/contraseña y restablecimiento por enlace se gestionan con Supabase Auth; la respuesta de recuperación no confirma si una cuenta existe. Las contraseñas no se guardan en tablas de la aplicación. Confirm Email se desactiva para el flujo sin OTP; limita las URL de redirección y configura límites antiabuso antes de producción.
 - **A08 Software or Data Integrity Failures:** la migración RLS está aplicada; aún falta validar el guardado autenticado y la recuperación de datos. El contrato desplegado autoriza con `require_auth` y mantiene hashes append-only. El WASM local añade extensión de TTL, pero no está desplegado. La restauración cliente de entradas archivadas requiere validación.
-- **A09 Security Logging and Alerting Failures:** los eventos de cadena y la actividad de la plataforma son visibles en sus respectivas herramientas, pero no hay bitácora de auditoría de aplicación ni alertas propias.
+- **A09 Security Logging and Alerting Failures:** existe un historial de cambios por lote en Supabase, pero es un dato de aplicación modificable por el propietario, no una bitácora inmutable ni un evento de Stellar. Tampoco hay alertas propias.
 - **A10 Mishandling of Exceptional Conditions:** errores de red/almacenamiento se controlan y notifican con Sonner; los errores de autenticación no exponen detalles internos.
 
 ## 11. Límites del prototipo
@@ -195,34 +218,35 @@ La referencia es [OWASP Top 10:2025](https://top10.owasp.org/2025/). Esta aplica
 - `/registros` muestra el acceso y requiere una cuenta para abrir el dashboard. La migración está aplicada; falta una cuenta de prueba y un lote publicado para validar el flujo de punta a punta.
 - Los perfiles de trabajo son selecciones del cliente y no constituyen autorización; la lista de miembros de demostración puede alterarse desde el navegador.
 - Lotes, eventos y metadatos usan Supabase por cuenta. La migración actualizada está aplicada y se verificó el rechazo anónimo de la tabla; el guardado autenticado aún no se ha probado. El directorio de miembros y los archivos seleccionados permanecen en localStorage/IndexedDB.
-- La hora de creación proviene del reloj del dispositivo y no es un sello de tiempo confiable.
+- La foto opcional del producto se guarda en el registro privado; la vista pública la incluye únicamente si el dueño publica el lote y la migración `202610160002_public_lot_product_photo.sql` está aplicada. Editar o retirar un lote solicita contraseña y motivo; retirar despublica la ficha y conserva el lote. El historial se guarda dentro del JSON del registro y no es inmutable ni se ancla a Stellar.
 - El QR abre la vista pública de Supabase en otros dispositivos cuando el dueño la habilita; no prueba identidad, autorización, integridad on-chain ni veracidad del lote.
 - La huella SHA-256 permite detectar cambios posteriores en los bytes registrados, pero no autentica al emisor ni certifica la sostenibilidad.
 - El contrato de Testnet solo acepta `record_event` de su administrador o de direcciones previamente autorizadas on-chain. La autorización de wallets no sustituye la identidad organizacional del MVP.
 - El escrow de Trustless Work es una integración opcional del perfil B2B y no una condición para registrar lotes. Requiere una API key de servidor, activo SAC de Testnet, direcciones de rol válidas y XLM de prueba para la tarifa de la wallet.
-- La demo usa un contrato de Testnet configurable; no se debe registrar información personal ni documentos privados en cadena.
 - Los enlaces de redes sociales del footer son ejemplos y no perfiles oficiales.
 - No se deben registrar datos personales, documentos privados ni información sensible en esta demo.
 
-La persistencia remota y la proyección pública están definidas en SQL; el proyecto recibió la versión anterior y requiere volver a ejecutar el script actualizado para las políticas de cuenta. También falta una tabla de organizaciones y membresías con autorización real; los perfiles de trabajo no sustituyen esa política.
+La persistencia remota y la proyección pública están definidas en SQL. Aún falta una tabla de organizaciones y membresías con autorización real; el directorio actual es local y la organización se declara en el perfil. En producción, cada perfil requerirá una identidad autenticada, rol asignado en servidor y políticas RLS que impidan cambiar de perfil para acceder a registros ajenos. Compartir correo/contraseña entre perfiles solo forma parte de esta demo.
 
 ## 12. Front construido
 
 La portada explica el producto en lenguaje directo: seguir el origen, las etapas y la evidencia de cada lote. El enlace **Registro** y el CTA **Consultar lotes** llevan a `/registros`; **Cómo funciona** desplaza a la sección Sobre. `/registros` ofrece acceso por correo/contraseña antes del dashboard.
 
-La pantalla principal es el panel de trazabilidad, con métricas remotas de lotes, eventos y certificados, conexión de wallet Stellar y un selector de perfiles. Los perfiles de productor, actor, certificador, administrador, comprador, auditor y consumidor son atribuciones declaradas: cambiar el selector no concede permisos ni confirma la identidad.
+La pantalla principal es el panel de trazabilidad, con métricas de lotes activos y retirados, eventos y certificados, conexión de wallet Stellar y un selector de perfiles. En esta demo una cuenta de correo/contraseña puede elegir cualquiera de los perfiles; el selector cambia la interfaz, no concede permisos ni confirma identidad. RLS mantiene los lotes privados limitados a su propietario.
 
 El flujo de productor implementa la historia prioritaria del Blueprint: registrar el origen y las características de un lote. El formulario solicita producto, características, ubicación de origen, fecha y organización responsable. Todos los campos son obligatorios; además de la validación del navegador, se rechazan los valores que contienen solamente espacios. El perfil de trabajo atribuye el actor y la organización al lote. Al guardar se genera un UUID y se almacena en Supabase; el QR se publica solo con autorización explícita del dueño.
 
-Los demás perfiles conectan con las historias siguientes del MVP. El actor de cadena selecciona un lote y registra un tipo de evento, fecha y detalle, con un archivo de evidencia opcional. El certificador asocia nombre, emisor, número, fechas y archivo; se calcula una huella SHA-256 para comparar la evidencia, sin afirmar que el emisor o certificado sean legítimos. El administrador gestiona un directorio de miembros de demostración. El comprador B2B busca lotes y puede filtrar certificados según su vigencia declarada. El auditor revisa eventos ordenados y alertas básicas de consistencia, que no equivalen a una auditoría ni a una detección de fraude.
+La mejora de semana 4 amplía el formulario de productor: selector de café, cacao o algodón orgánicos; atributos de cultivo; valor/divisa y unidad; datos adicionales manuales; foto de producto opcional; y ubicación con finca, ciudad, región y país. La foto permanece privada salvo que el lote se publique y esté aplicada la migración de proyección pública. El control de carga muestra el nombre, permite cambiar o quitar la foto y muestra previsualización. El historial separa los lotes activos y retirados. Las operaciones de creación y los demás flujos que escriben datos muestran confirmación. Editar o retirar un lote requiere contraseña y motivo; el retiro es lógico y guarda la descripción, fecha, responsable y perfil.
 
-El perfil consumidor incluye el escáner QR y entrada manual. La ficha `/lote/{id}` consulta la vista pública de Supabase y presenta datos declarados, cronología SVG accesible, certificados y hashes; omite los nombres personales y archivos. La wallet de Stellar firma el anclaje de una huella SHA-256; el flujo muestra la simulación, tarifa estimada, envío y confirmación de Testnet. La cuenta debe estar financiada con XLM de prueba.
+Los demás perfiles conectan con las historias siguientes del MVP. Actor de cadena puede editar sus eventos propios y Certificador sus certificados registrados, con contraseña, motivo y auditoría en el lote; pueden cambiar la evidencia adjunta. El Administrador edita miembros del directorio local filtrado por organización declarada. Comprador B2B puede cambiar el borrador de escrow antes de firmarlo; un contrato desplegado no se edita desde el panel. Auditor puede escribir observaciones privadas por lote, pero no cambiar la fuente que revisa. Las notas de auditoría no equivalen a una auditoría ni a una detección de fraude.
+
+El perfil consumidor incluye el escáner QR y entrada manual. La ficha `/lote/{id}` consulta la vista pública de Supabase y presenta datos declarados, la foto de producto si el dueño publicó el lote, QR para compartir, cronología SVG accesible, certificados y hashes; no publica los archivos de evidencia. La wallet de Stellar firma el anclaje de una huella SHA-256; el flujo muestra la simulación, tarifa estimada, envío y confirmación de Testnet. La cuenta debe estar financiada con XLM de prueba.
 
 El perfil Comprador B2B incorpora un flujo de escrow opcional con Trustless Work Core API V2. La aplicación construye/simula el escrow en servidor, muestra contrato previsto y tarifa, solicita la firma de la wallet y envía el XDR firmado para confirmación. La API key permanece en el servidor. El dashboard aplica `border-beam` a las métricas y desactiva el efecto cuando `prefers-reduced-motion` está activo.
 
 Estos flujos cubren a nivel de interfaz las historias priorizadas en el Blueprint: origen, eventos, certificados, consulta del consumidor, administración de miembros, búsqueda B2B y revisión de auditoría. Se usan etiquetas asociadas a los campos, estructura semántica, indicadores de estado accesibles, foco visible y navegación por teclado. Los errores de alta se anuncian; los formularios rechazan campos requeridos incompletos. La animación de entrada y la animación del registro nuevo se desactivan cuando el usuario prefiere movimiento reducido.
 
-El dashboard requiere una cuenta Supabase. La migración actualizada está aplicada; la vista QR devuelve 200 vacía hasta publicar un lote. La cuenta puede iniciar sesión en otro navegador; miembros y archivos continúan locales. No hay autorización por organización ni restauración cliente de entradas Soroban archivadas. La wallet firma anclajes y autorizaciones on-chain, no identifica la sesión Supabase. El contrato Testnet enlazado es anterior al WASM con TTL, aún no desplegado. El escrow sigue deshabilitado por falta de API key/allowlist. No hay despliegue público confirmado.
+El dashboard requiere una cuenta Supabase. Los perfiles comparten la cuenta en esta demo y no son roles de seguridad. En producción cada perfil necesita identidad y rol verificados, membresías y políticas RLS por organización. Los avisos de la campana son privados por usuario y cultivo, y solo se generan con la publicación del lote; `202610160003_product_notifications.sql` y `202610160004_cleanup_product_notifications.sql` deben estar aplicadas. Miembros continúan en localStorage. La wallet firma anclajes y autorizaciones on-chain, no identifica la sesión Supabase. El contrato Testnet enlazado es anterior al WASM con TTL, aún no desplegado. El escrow sigue deshabilitado por falta de API key/allowlist. No hay despliegue público confirmado.
 
 ## 13. Decisión técnica
 

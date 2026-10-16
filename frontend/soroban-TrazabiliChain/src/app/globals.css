@@ -19,7 +19,13 @@
 input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
+  max-width: 100%;
   font-size: 16px;
+}
+
+input[type="file"] {
+  min-width: 0;
+  max-width: 100%;
 }
 
 input::placeholder,
@@ -65,6 +71,11 @@ summary {
   cursor: pointer;
 }
 
+select:not(:disabled),
+input[type="checkbox"]:not(:disabled) {
+  cursor: pointer;
+}
+
 button:disabled {
   cursor: not-allowed;
 }
@@ -76,6 +87,23 @@ button:disabled {
 
 .date-input::-webkit-calendar-picker-indicator {
   cursor: pointer;
+}
+
+.date-input {
+  min-width: 0;
+  color-scheme: light;
+  -webkit-appearance: auto;
+}
+
+.date-input::-webkit-datetime-edit {
+  min-height: 1.5em;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.date-input::-webkit-datetime-edit-fields-wrapper {
+  min-width: 0;
+  padding: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

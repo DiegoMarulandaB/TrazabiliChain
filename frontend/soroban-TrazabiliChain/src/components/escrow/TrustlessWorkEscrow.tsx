@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
 import { buildSingleReleaseEscrow, submitSignedEscrow } from "@/lib/stellar/trustless-work";
 import type { LotRecord } from "@/lib/lots/lot-storage";
@@ -51,6 +52,9 @@ export function TrustlessWorkEscrow({ records }: { records: LotRecord[] }) {
     null,
   );
   const [confirmedTxHash, setConfirmedTxHash] = useState<string | null>(null);
+  const [isPreparationConfirmationOpen, setIsPreparationConfirmationOpen] = useState(false);
+  const preparationConfirmed = useRef(false);
+  const escrowFormRef = useRef<HTMLFormElement>(null);
 
   const selectedLot = records.find((record) => record.id === selectedLotId);
 
@@ -62,6 +66,11 @@ export function TrustlessWorkEscrow({ records }: { records: LotRecord[] }) {
 
   async function prepareEscrow(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!preparationConfirmed.current) {
+      setIsPreparationConfirmationOpen(true);
+      return;
+    }
+    preparationConfirmed.current = false;
     if (!address || !selectedLot) {
       toast.error("Conecta una wallet y selecciona un lote antes de preparar el escrow.");
       return;
@@ -182,7 +191,7 @@ export function TrustlessWorkEscrow({ records }: { records: LotRecord[] }) {
         </p>
       ) : (
         <>
-          <form className="grid gap-5" onSubmit={prepareEscrow}>
+          <form ref={escrowFormRef} className="grid min-w-0 gap-5" onSubmit={prepareEscrow}>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <label htmlFor="escrow-lot" className="text-sm font-semibold text-ink">
@@ -255,7 +264,9 @@ export function TrustlessWorkEscrow({ records }: { records: LotRecord[] }) {
               <p className="mb-0 text-xs leading-5 text-gray-700 sm:col-span-2">
                 La wallet conectada será quien inicia y firma el despliegue. El administrador debe
                 ser distinto de los demás roles; el activo y cada dirección deben corresponder a
-                Stellar Testnet.
+                Stellar Testnet. La wallet de plataforma se captura como dirección porque esta
+                instalación no mantiene un directorio de wallets preconfiguradas para ofrecer una
+                lista segura.
               </p>
             </fieldset>
 
@@ -267,6 +278,21 @@ export function TrustlessWorkEscrow({ records }: { records: LotRecord[] }) {
               {phase === "building" ? "Construyendo y simulando…" : "Preparar y simular escrow"}
             </button>
           </form>
+          <ConfirmDialog
+            open={isPreparationConfirmationOpen}
+            title="Revisa los datos antes de simular"
+            description="Confirma el lote, el monto, el activo y las wallets de cada rol. La simulación consultará Stellar Testnet, pero no enviará el escrow hasta que firmes después."
+            isBusy={phase === "building"}
+            onCancel={() => {
+              preparationConfirmed.current = false;
+              setIsPreparationConfirmationOpen(false);
+            }}
+            onConfirm={() => {
+              preparationConfirmed.current = true;
+              setIsPreparationConfirmationOpen(false);
+              escrowFormRef.current?.requestSubmit();
+            }}
+          />
 
           {build && phase === "ready" && (
             <div className="mt-5 grid gap-3 border-l-2 border-accent bg-accent-soft/60 px-4 py-4">

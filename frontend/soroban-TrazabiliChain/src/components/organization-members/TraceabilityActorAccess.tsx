@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
 import { setTraceabilityActorAuthorization } from "@/lib/stellar/write";
 
@@ -9,6 +10,7 @@ export function TraceabilityActorAccess() {
   const { address, signTransaction } = useStellarWallet();
   const [actorAddress, setActorAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingAuthorization, setPendingAuthorization] = useState<boolean | null>(null);
 
   async function updateAuthorization(authorized: boolean) {
     if (!address) {
@@ -50,7 +52,7 @@ export function TraceabilityActorAccess() {
 
   function authorizeActor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    void updateAuthorization(true);
+    setPendingAuthorization(true);
   }
 
   return (
@@ -62,7 +64,10 @@ export function TraceabilityActorAccess() {
         Solo la wallet administradora configurada en `__constructor` puede autorizar o revocar
         actores. Cada cambio se simula, muestra su tarifa y requiere firma en la wallet.
       </p>
-      <form className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]" onSubmit={authorizeActor}>
+      <form
+        className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]"
+        onSubmit={authorizeActor}
+      >
         <div className="grid gap-1.5">
           <label htmlFor="traceability-actor-address" className="text-sm font-semibold text-ink">
             Wallet Stellar del actor
@@ -88,12 +93,27 @@ export function TraceabilityActorAccess() {
         <button
           type="button"
           disabled={isSubmitting || !actorAddress.trim()}
-          onClick={() => void updateAuthorization(false)}
+          onClick={() => setPendingAuthorization(false)}
           className="min-h-11 self-end rounded-md border border-line px-3 text-sm font-semibold text-ink hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           Revocar
         </button>
       </form>
+      <ConfirmDialog
+        open={pendingAuthorization !== null}
+        title={pendingAuthorization ? "Confirmar autorización" : "Confirmar revocación"}
+        description={`Verifica que la wallet ${actorAddress.trim()} sea correcta. Esta acción solicitará una firma y pagará la tarifa de red.`}
+        confirmLabel={pendingAuthorization ? "Autorizar" : "Revocar"}
+        isBusy={isSubmitting}
+        onCancel={() => setPendingAuthorization(null)}
+        onConfirm={() => {
+          if (pendingAuthorization !== null) {
+            const authorized = pendingAuthorization;
+            setPendingAuthorization(null);
+            void updateAuthorization(authorized);
+          }
+        }}
+      />
     </section>
   );
 }
