@@ -83,7 +83,9 @@ export function RecordsPanel({
   const storedRecords = useLotRecords();
   const records = selectedLotId
     ? storedRecords.filter((record) => record.id === selectedLotId)
-    : storedRecords;
+    : initialRole === "producer" && initialProduct
+      ? storedRecords.filter((record) => record.product === initialProduct)
+      : storedRecords;
   const [form, setForm] = useState<LotForm>(() => ({ ...initialForm, product: initialProduct }));
   const [variety, setVariety] = useState("");
   const [presentation, setPresentation] = useState("");
@@ -317,7 +319,7 @@ export function RecordsPanel({
       setNewRecordId(record.id);
       setAnnouncement(`Registro de ${record.product} creado: ${formatCreatedAt(record.createdAt)}`);
       toast.success(`Lote ${record.product} registrado correctamente.`);
-      setForm(initialForm);
+      setForm({ ...initialForm, product: initialProduct });
       setVariety("");
       setPresentation("");
       setHarvest("");
