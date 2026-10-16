@@ -4,6 +4,7 @@ const isProduction = process.env.NODE_ENV === "production";
 const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
   : undefined;
+const supabaseRealtimeOrigin = supabaseOrigin?.replace(/^https:/, "wss:").replace(/^http:/, "ws:");
 const connectSources = [
   "'self'",
   "https://soroban-testnet.stellar.org",
@@ -14,14 +15,15 @@ const connectSources = [
   "https://rpc.walletconnect.com",
   "wss://relay.walletconnect.com",
   ...(supabaseOrigin ? [supabaseOrigin] : []),
+  ...(supabaseRealtimeOrigin ? [supabaseRealtimeOrigin] : []),
   ...(!isProduction ? ["ws:", "wss:"] : []),
 ].join(" ");
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https://stellar.creit.tech",
-  "font-src 'self' data:",
+  "font-src 'self' data: https://fonts.gstatic.com",
   `connect-src ${connectSources}`,
   "base-uri 'self'",
   "form-action 'self'",

@@ -59,15 +59,16 @@ export async function saveProductNotificationPreference(product: string) {
   }
 
   try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user || data.user.is_anonymous) {
+    const { data, error } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    if (error || !user || user.is_anonymous) {
       return false;
     }
 
     const { error: saveError } = await supabase
       .from("product_notification_subscriptions")
       .upsert(
-        { user_id: data.user.id, product, updated_at: new Date().toISOString() },
+        { user_id: user.id, product, updated_at: new Date().toISOString() },
         { onConflict: "user_id" },
       );
     return !saveError;

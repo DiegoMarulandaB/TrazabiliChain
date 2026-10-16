@@ -33,16 +33,11 @@ export function ProductNotificationsBell() {
   useEffect(() => {
     if (!supabase) return;
 
-    let isMounted = true;
-    void supabase.auth.getUser().then(({ data }) => {
-      if (isMounted) setUserId(data.user && !data.user.is_anonymous ? data.user.id : null);
-    });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session && !session.user.is_anonymous ? session.user.id : null);
     });
 
     return () => {
-      isMounted = false;
       data.subscription.unsubscribe();
     };
   }, [supabase]);
