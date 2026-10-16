@@ -18,24 +18,53 @@ export function SplashScreen({ children }: SplashScreenProps) {
   const splashRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let isComplete = false;
     const startTime = performance.now();
     let animationFrame = 0;
+    let fallbackTimeout = 0;
+
+    function finishSplash() {
+      if (isComplete) return;
+      isComplete = true;
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(fallbackTimeout);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      setProgress(100);
+      setIsVisible(false);
+    }
+
+    function handleVisibilityChange() {
+      if (!document.hidden) finishSplash();
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finishSplash();
+      return;
+    }
 
     function updateProgress(currentTime: number) {
+      if (isComplete) return;
       const elapsed = currentTime - startTime;
       const nextProgress = Math.min(Math.floor((elapsed / (splashDuration * 1000)) * 100), 100);
       setProgress(nextProgress);
 
       if (nextProgress === 100) {
-        setIsVisible(false);
+        finishSplash();
         return;
       }
 
       animationFrame = window.requestAnimationFrame(updateProgress);
     }
 
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    fallbackTimeout = window.setTimeout(finishSplash, splashDuration * 1000 + 750);
     animationFrame = window.requestAnimationFrame(updateProgress);
-    return () => window.cancelAnimationFrame(animationFrame);
+    return () => {
+      isComplete = true;
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(fallbackTimeout);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   useGSAP(
