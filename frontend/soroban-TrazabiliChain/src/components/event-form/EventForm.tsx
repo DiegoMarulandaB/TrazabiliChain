@@ -17,6 +17,7 @@ import {
   type LotRecord,
 } from "@/lib/lots/lot-storage";
 import { verifyCurrentPassword } from "@/lib/supabase/verify-current-password";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 
 const eventTypes = ["Recepción", "Despacho", "Transformación", "Entrega", "Inspección", "Otro"];
 const maximumEvidenceSize = 10 * 1024 * 1024;
@@ -37,11 +38,15 @@ export function EventForm({
   actorName,
   actorRole,
   organization,
+  draftUserId,
+  product,
 }: {
   records: LotRecord[];
   actorName: string;
   actorRole: DemoRole;
   organization: string;
+  draftUserId: string | null;
+  product: string;
 }) {
   const [lotId, setLotId] = useState(records[0]?.id ?? "");
   const [type, setType] = useState(eventTypes[0]);
@@ -72,6 +77,25 @@ export function EventForm({
       .map((event) => ({ recordId: record.id, event })),
   );
   const editingEntry = ownedEvents.find(({ event }) => event.id === editingEventId);
+  const eventDraft = useWorkDraft({
+    userId: draftUserId,
+    role: actorRole,
+    product,
+    draftKey: "supply-event",
+    payload: { lotId, type, occurredAt, details },
+    onRestore: (draft) => {
+      if (draft.lotId) {
+        setLotId(
+          records.some((record) => record.id === draft.lotId)
+            ? draft.lotId
+            : (records[0]?.id ?? ""),
+        );
+      }
+      if (draft.type) setType(draft.type);
+      if (draft.occurredAt) setOccurredAt(draft.occurredAt);
+      if (draft.details) setDetails(draft.details);
+    },
+  });
 
   function reportError(message: string) {
     setMessage(message);
@@ -347,6 +371,7 @@ export function EventForm({
       <form
         ref={eventFormRef}
         className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2"
+        inert={!eventDraft.isReady}
         noValidate
         onSubmit={submitEvent}
       >
@@ -630,6 +655,11 @@ export function EventForm({
               : "Agregar al historial"}
         </button>
       </form>
+      {!eventDraft.isReady && (
+        <p className="mt-3 mb-0 text-sm text-gray-700" role="status" aria-live="polite">
+          Restaurando el borrador de tu cuenta…
+        </p>
+      )}
       {ownedEvents.length > 0 && (
         <details className="mt-6 border-t border-line pt-4">
           <summary className="w-fit cursor-pointer text-sm font-semibold text-accent underline underline-offset-4">
@@ -669,6 +699,7 @@ export function EventForm({
             ? "El cambio requiere contraseña y razón; se añadirá al historial de auditoría del lote."
             : "Verifica el lote, la fecha, el detalle y el archivo de evidencia. El evento se añadirá al historial del lote."
         }
+        helperText="Para buscar este lote en otro perfil, copia los primeros 8 caracteres de su ID desde el QR; no copies la URL completa."
         confirmLabel={editingEventId ? "Guardar cambios" : "Agregar evento"}
         isBusy={isSaving}
         onCancel={() => {

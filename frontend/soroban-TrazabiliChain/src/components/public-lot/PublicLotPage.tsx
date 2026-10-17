@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
+import { LotJourney } from "@/components/lot-journey/LotJourney";
 import { LotSharing } from "@/components/lot-sharing/LotSharing";
 import { LotCharacteristics } from "@/components/lot-characteristics/LotCharacteristics";
 import { getPublicLotRecord, type LotRecord } from "@/lib/lots/lot-storage";
@@ -138,35 +139,7 @@ export function PublicLotPage({ id }: { id: string }) {
                 {record.events.length} {record.events.length === 1 ? "evento" : "eventos"}
               </span>
             </div>
-            {record.events.length > 0 ? (
-              <ol className="mt-4 grid gap-4 border-l border-line pl-5">
-                {record.events.map((event) => (
-                  <li key={event.id} className="relative">
-                    <span
-                      className="absolute left-[1.38rem] top-1.5 size-2 rounded-full bg-accent"
-                      aria-hidden="true"
-                    />
-                    <h3 className="mb-1 text-sm font-semibold text-ink">{event.type}</h3>
-                    <p className="mb-1 text-xs text-gray-700">
-                      <time dateTime={event.occurredAt}>{formatDate(event.occurredAt, true)}</time>
-                      {" · "}
-                      {event.actorRole ? roleLabels[event.actorRole] : "Actor declarado"} ·{" "}
-                      {event.organization}
-                    </p>
-                    <p className="mb-0 text-sm leading-6 text-ink">{event.details}</p>
-                    {event.evidenceSha256 && (
-                      <p className="mt-2 mb-0 break-all font-mono text-xs text-gray-700">
-                        SHA-256 de evidencia: {event.evidenceSha256}
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="mt-3 mb-0 text-sm text-gray-700">
-                Aún no hay eventos asociados a este lote.
-              </p>
-            )}
+            <LotJourney record={record} />
           </section>
           <section
             className="mt-7 border-t border-line pt-5"

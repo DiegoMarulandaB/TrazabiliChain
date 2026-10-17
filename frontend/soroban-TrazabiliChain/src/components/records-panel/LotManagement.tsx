@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FileUploadField } from "@/components/ui/FileUploadField";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   formatLocalizedNumberInput,
@@ -29,10 +30,12 @@ export function LotManagement({
   record,
   actorName,
   actorRole,
+  draftUserId,
 }: {
   record: LotRecord;
   actorName: string;
   actorRole: DemoRole;
+  draftUserId: string | null;
 }) {
   const [product, setProduct] = useState(record.product);
   const originalCharacteristics = useRef(parseLotCharacteristics(record.characteristics));
@@ -52,6 +55,30 @@ export function LotManagement({
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
+  const lotEditDraft = useWorkDraft({
+    userId: draftUserId,
+    role: actorRole,
+    product: record.product,
+    draftKey: `lot-edit-${record.id}`,
+    payload: {
+      product,
+      characteristics,
+      origin,
+      originDate,
+      organization,
+      removeProductImage,
+      reason,
+    },
+    onRestore: (draft) => {
+      if (draft.product !== undefined) setProduct(draft.product);
+      if (draft.characteristics !== undefined) setCharacteristics(draft.characteristics);
+      if (draft.origin !== undefined) setOrigin(draft.origin);
+      if (draft.originDate !== undefined) setOriginDate(draft.originDate);
+      if (draft.organization !== undefined) setOrganization(draft.organization);
+      if (draft.removeProductImage !== undefined) setRemoveProductImage(draft.removeProductImage);
+      if (draft.reason !== undefined) setReason(draft.reason);
+    },
+  });
 
   async function confirmAction() {
     if (!pendingAction || !reason.trim() || !password) {
@@ -257,6 +284,7 @@ export function LotManagement({
           <form
             className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2"
             onSubmit={(event) => event.preventDefault()}
+            inert={!lotEditDraft.isReady}
           >
             <div className="grid min-w-0 gap-1.5">
               <label
@@ -635,6 +663,17 @@ export function LotManagement({
               </button>
             </div>
           </form>
+          {!lotEditDraft.isReady && (
+            <p className="mt-2 mb-0 text-sm text-gray-700" role="status" aria-live="polite">
+              Restaurando la edición de este lote…
+            </p>
+          )}
+          {lotEditDraft.isReady && (
+            <p className="mt-2 mb-0 text-xs text-gray-700">
+              Por seguridad, la contraseña y los archivos de imagen no se sincronizan entre
+              navegadores.
+            </p>
+          )}
         </details>
       )}
       {message && (
@@ -652,6 +691,7 @@ export function LotManagement({
             ? "Se ocultará la ficha pública y el lote dejará el listado activo. El registro de auditoría se conservará."
             : "Se actualizarán los datos del lote y se añadirá una entrada al historial con la fecha, el responsable y el motivo."
         }
+        helperText="Conserva los primeros 8 caracteres del ID del lote que aparece en el QR; ese prefijo sirve para buscarlo en otros perfiles."
         confirmLabel={pendingAction === "deleted" ? "Retirar lote" : "Guardar cambios"}
         isBusy={isBusy}
         onCancel={() => {

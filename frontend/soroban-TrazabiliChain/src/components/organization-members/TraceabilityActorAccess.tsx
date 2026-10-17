@@ -3,14 +3,31 @@
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
 import { setTraceabilityActorAuthorization } from "@/lib/stellar/write";
 
-export function TraceabilityActorAccess() {
+export function TraceabilityActorAccess({
+  draftUserId,
+  product,
+}: {
+  draftUserId: string | null;
+  product: string;
+}) {
   const { address, signTransaction } = useStellarWallet();
   const [actorAddress, setActorAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingAuthorization, setPendingAuthorization] = useState<boolean | null>(null);
+  const actorDraft = useWorkDraft({
+    userId: draftUserId,
+    role: "organizationAdmin",
+    product,
+    draftKey: "authorized-actor-address",
+    payload: { actorAddress },
+    onRestore: (draft) => {
+      if (draft.actorAddress !== undefined) setActorAddress(draft.actorAddress);
+    },
+  });
 
   async function updateAuthorization(authorized: boolean) {
     if (!address) {
@@ -73,6 +90,7 @@ export function TraceabilityActorAccess() {
       <form
         className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]"
         onSubmit={authorizeActor}
+        inert={!actorDraft.isReady}
       >
         <div className="grid gap-1.5">
           <label htmlFor="traceability-actor-address" className="text-sm font-semibold text-ink">
@@ -110,10 +128,16 @@ export function TraceabilityActorAccess() {
           Revocar
         </button>
       </form>
+      {!actorDraft.isReady && (
+        <p className="mt-2 mb-0 text-sm text-gray-700" role="status" aria-live="polite">
+          Restaurando el formulario de acceso…
+        </p>
+      )}
       <ConfirmDialog
         open={pendingAuthorization !== null}
         title={pendingAuthorization ? "Confirmar autorización" : "Confirmar revocación"}
         description={`Verifica que la wallet ${actorAddress.trim()} sea correcta. Esta acción solicitará una firma y pagará la tarifa de red.`}
+        helperText="Si esta acción corresponde a un lote, conserva los primeros 8 caracteres de su ID del QR; no ingreses la URL completa."
         confirmLabel={pendingAuthorization ? "Autorizar" : "Revocar"}
         isBusy={isSubmitting}
         onCancel={() => setPendingAuthorization(null)}

@@ -6,6 +6,7 @@ export function ConfirmDialog({
   open,
   title,
   description,
+  helperText,
   confirmLabel = "Continuar",
   backLabel,
   isBusy = false,
@@ -16,6 +17,7 @@ export function ConfirmDialog({
   open: boolean;
   title: string;
   description: string;
+  helperText?: string;
   confirmLabel?: string;
   backLabel?: string;
   isBusy?: boolean;
@@ -75,6 +77,11 @@ export function ConfirmDialog({
         >
           {description}
         </p>
+        {helperText && (
+          <p className="mt-3 mb-0 rounded-sm bg-accent-soft px-3 py-2 text-xs leading-5 text-ink">
+            {helperText}
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap justify-end gap-2">
           {backLabel && onBack && (
             <button

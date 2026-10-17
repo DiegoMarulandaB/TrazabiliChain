@@ -3,33 +3,42 @@
 import { useState, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FormFieldError } from "@/components/ui/FormFieldError";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 import { updateLotRecord, type LotAuditNote, type LotRecord } from "@/lib/lots/lot-storage";
-import { verifyCurrentPassword } from "@/lib/supabase/verify-current-password";
 
 export function AuditNotePanel({
   record,
   author,
   organization,
+  draftUserId,
 }: {
   record: LotRecord;
   author: string;
   organization: string;
+  draftUserId: string | null;
 }) {
   const [text, setText] = useState("");
-  const [reason, setReason] = useState("");
-  const [password, setPassword] = useState("");
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [errorField, setErrorField] = useState<"text" | "reason" | "password" | null>(null);
+  const [errorField, setErrorField] = useState<"text" | null>(null);
   const [message, setMessage] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const fieldId = `audit-note-${record.id}`;
+  const noteDraft = useWorkDraft({
+    userId: draftUserId,
+    role: "auditor",
+    product: record.product,
+    draftKey: `audit-note-${record.id}`,
+    payload: { text },
+    onRestore: (draft) => {
+      if (draft.text !== undefined) setText(draft.text);
+    },
+  });
+
   function beginEditing(note: LotAuditNote) {
     setEditingNoteId(note.id);
     setText(note.text);
-    setReason("");
-    setPassword("");
     setError("");
     setErrorField(null);
     setMessage("");
@@ -38,8 +47,6 @@ export function AuditNotePanel({
   function cancelEditing() {
     setEditingNoteId(null);
     setText("");
-    setReason("");
-    setPassword("");
     setError("");
     setErrorField(null);
   }
@@ -52,18 +59,6 @@ export function AuditNotePanel({
       document.getElementById(`${fieldId}-text`)?.focus();
       return;
     }
-    if (!reason.trim()) {
-      setError("Escribe la razón de la observación o su corrección.");
-      setErrorField("reason");
-      document.getElementById(`${fieldId}-reason`)?.focus();
-      return;
-    }
-    if (!password) {
-      setError("Ingresa la contraseña de tu cuenta.");
-      setErrorField("password");
-      document.getElementById(`${fieldId}-password`)?.focus();
-      return;
-    }
     setError("");
     setErrorField(null);
     setIsDialogOpen(true);
@@ -72,22 +67,18 @@ export function AuditNotePanel({
   async function confirmSave() {
     setIsSaving(true);
     try {
-      if (!(await verifyCurrentPassword(password))) {
-        setError("La contraseña no coincide. No se guardó la observación.");
-        setErrorField("password");
-        setIsDialogOpen(false);
-        return;
-      }
-
       const now = new Date().toISOString();
       const noteId = editingNoteId ?? window.crypto.randomUUID();
       const saved = await updateLotRecord(record.id, (current) => {
+        const existingReason = current.auditNotes?.find(
+          (existing) => existing.id === noteId,
+        )?.reason;
         const note: LotAuditNote = {
           id: noteId,
           author,
           organization,
           text: text.trim(),
-          reason: reason.trim(),
+          ...(existingReason ? { reason: existingReason } : {}),
           createdAt:
             current.auditNotes?.find((existing) => existing.id === noteId)?.createdAt ?? now,
           updatedAt: now,
@@ -111,8 +102,7 @@ export function AuditNotePanel({
       setMessage(editingNoteId ? "Observación actualizada." : "Observación agregada.");
       setEditingNoteId(null);
       setText("");
-      setReason("");
-      setPassword("");
+      await noteDraft.clearDraft();
       setErrorField(null);
       setIsDialogOpen(false);
     } catch {
@@ -144,7 +134,7 @@ export function AuditNotePanel({
                   timeStyle: "short",
                 }).format(new Date(note.updatedAt))}
               </p>
-              <p className="mb-1 text-xs text-gray-700">Motivo: {note.reason}</p>
+              {note.reason && <p className="mb-1 text-xs text-gray-700">Motivo: {note.reason}</p>}
               {note.author === author && note.organization === organization && (
                 <button
                   type="button"
@@ -158,7 +148,12 @@ export function AuditNotePanel({
           ))}
         </ul>
       )}
-      <form className="mt-4 grid gap-3" noValidate onSubmit={requestSave}>
+      <form
+        className="mt-4 grid gap-3"
+        noValidate
+        onSubmit={requestSave}
+        inert={!noteDraft.isReady}
+      >
         <div className="grid gap-1.5">
           <label htmlFor={`${fieldId}-text`} className="text-xs font-semibold text-ink">
             {editingNoteId ? "Observación revisada" : "Nueva observación"}
@@ -177,45 +172,6 @@ export function AuditNotePanel({
             aria-describedby={errorField === "text" ? `${fieldId}-error` : undefined}
             className="min-w-0 rounded-md border border-line bg-white px-3 py-2 text-sm"
           />
-        </div>
-        <div className="grid gap-1.5 sm:grid-cols-2">
-          <div className="grid min-w-0 gap-1.5">
-            <label htmlFor={`${fieldId}-reason`} className="text-xs font-semibold text-ink">
-              Razón
-            </label>
-            <input
-              id={`${fieldId}-reason`}
-              maxLength={300}
-              value={reason}
-              onChange={(event) => {
-                setReason(event.target.value);
-                if (errorField === "reason") setError("");
-                setErrorField(null);
-              }}
-              aria-invalid={errorField === "reason"}
-              aria-describedby={errorField === "reason" ? `${fieldId}-error` : undefined}
-              className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
-            />
-          </div>
-          <div className="grid min-w-0 gap-1.5">
-            <label htmlFor={`${fieldId}-password`} className="text-xs font-semibold text-ink">
-              Contraseña de la cuenta
-            </label>
-            <input
-              id={`${fieldId}-password`}
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                if (errorField === "password") setError("");
-                setErrorField(null);
-              }}
-              aria-invalid={errorField === "password"}
-              aria-describedby={errorField === "password" ? `${fieldId}-error` : undefined}
-              className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
-            />
-          </div>
         </div>
         {error && <FormFieldError id={`${fieldId}-error`} message={error} />}
         <div className="flex flex-wrap gap-2">
@@ -237,6 +193,11 @@ export function AuditNotePanel({
           )}
         </div>
       </form>
+      {!noteDraft.isReady && (
+        <p className="mt-2 mb-0 text-sm text-gray-700" role="status" aria-live="polite">
+          Restaurando tu observación guardada…
+        </p>
+      )}
       {message && (
         <p className="mt-3 mb-0 text-sm text-accent" role="status">
           {message}
@@ -245,7 +206,8 @@ export function AuditNotePanel({
       <ConfirmDialog
         open={isDialogOpen}
         title={editingNoteId ? "Confirmar cambio de observación" : "Confirmar observación"}
-        description="La observación quedará asociada al historial privado del lote, con autor, fecha y razón. No modificará sus eventos ni certificados."
+        description="La observación quedará asociada al historial privado del lote con autor y fecha. No modificará sus eventos ni certificados."
+        helperText="Conserva los primeros 8 caracteres del ID del lote que aparece en el QR para encontrarlo en otros perfiles."
         confirmLabel={editingNoteId ? "Guardar cambios" : "Agregar observación"}
         isBusy={isSaving}
         onCancel={() => setIsDialogOpen(false)}

@@ -1,6 +1,7 @@
 import type { LotRecord } from "@/lib/lots/lot-storage";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
 import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
+import { LotJourney } from "@/components/lot-journey/LotJourney";
 import { AuditNotePanel } from "@/components/audit-dashboard/AuditNotePanel";
 
 type AuditEntry = {
@@ -40,10 +41,12 @@ export function AuditDashboard({
   records,
   actorName,
   organization,
+  draftUserId,
 }: {
   records: LotRecord[];
   actorName: string;
   organization: string;
+  draftUserId: string | null;
 }) {
   const entries: AuditEntry[] = records
     .flatMap((lot) => lot.events.map((event) => ({ lot, event })))
@@ -145,7 +148,13 @@ export function AuditDashboard({
                 <h4 className="mb-0 text-sm font-semibold text-ink">
                   {record.product} · {record.id.slice(0, 8)}
                 </h4>
-                <AuditNotePanel record={record} author={actorName} organization={organization} />
+                <LotJourney record={record} />
+                <AuditNotePanel
+                  record={record}
+                  author={actorName}
+                  organization={organization}
+                  draftUserId={draftUserId}
+                />
               </article>
             ))}
           {records.length === 0 && (

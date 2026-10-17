@@ -123,6 +123,26 @@ export async function anchorLotHash(
   return simulateSignAndSubmit(invocation, signTransaction);
 }
 
+export async function getTraceabilityContractAdmin() {
+  if (!contractId) {
+    throw new Error("Configura NEXT_PUBLIC_TRACEABILITY_CONTRACT_ID con el contrato desplegado.");
+  }
+
+  const server = new rpc.Server(testnetRpcUrl);
+  try {
+    const instance = await server.getContractInstance(contractId);
+    const adminEntry = instance.storage()?.find((entry) => {
+      const keyParts = entry.key().vec();
+      return keyParts?.[0]?.sym()?.toString() === "Admin";
+    });
+    const adminValue = adminEntry?.val().address();
+    if (!adminValue) throw new Error("El contrato no contiene una dirección administradora.");
+    return Address.fromScAddress(adminValue).toString();
+  } catch {
+    throw new Error("No se pudo leer la wallet administradora del contrato en Testnet.");
+  }
+}
+
 export async function setTraceabilityActorAuthorization(
   adminAddress: string,
   actorAddress: string,
@@ -133,22 +153,7 @@ export async function setTraceabilityActorAuthorization(
     throw new Error("Configura NEXT_PUBLIC_TRACEABILITY_CONTRACT_ID con el contrato desplegado.");
   }
 
-  const server = new rpc.Server(testnetRpcUrl);
-  let contractAdmin: string;
-  try {
-    const instance = await server.getContractInstance(contractId);
-    const adminEntry = instance.storage()?.find((entry) => {
-      const keyParts = entry.key().vec();
-      return keyParts?.[0]?.sym()?.toString() === "Admin";
-    });
-    const adminValue = adminEntry?.val().address();
-    if (!adminValue) {
-      throw new Error("El contrato no contiene una dirección administradora.");
-    }
-    contractAdmin = Address.fromScAddress(adminValue).toString();
-  } catch {
-    throw new Error("No se pudo leer la wallet administradora del contrato en Testnet.");
-  }
+  const contractAdmin = await getTraceabilityContractAdmin();
 
   if (adminAddress !== contractAdmin) {
     throw new Error(

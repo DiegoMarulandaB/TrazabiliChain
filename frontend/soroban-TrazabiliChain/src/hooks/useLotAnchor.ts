@@ -4,7 +4,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
 import { getLotEventCount, getLotEventHash } from "@/lib/stellar/read";
-import { anchorLotHash } from "@/lib/stellar/write";
+import { anchorLotHash, getTraceabilityContractAdmin } from "@/lib/stellar/write";
+import { getPublicLotHash } from "@/lib/stellar/lot-hash";
+import { notifyOwnerOfLotAnchor } from "@/lib/lots/anchor-notifications";
 import type { LotRecord } from "@/lib/lots/lot-storage";
 
 type AnchorResult = {
@@ -19,50 +21,10 @@ type AnchorStatus = {
   isError?: boolean;
 };
 
-async function getPublicLotHash(record: LotRecord) {
-  const publicLotData = JSON.stringify({
-    id: record.id,
-    product: record.product,
-    characteristics: record.characteristics,
-    origin: record.origin,
-    originDate: record.originDate,
-    organization: record.organization,
-    createdBy: "Responsable de la organización",
-    createdByRole: record.createdByRole,
-    isPublic: true,
-    createdAt: record.createdAt,
-    events: [...record.events]
-      .sort((first, second) => first.occurredAt.localeCompare(second.occurredAt))
-      .map((event) => ({
-        id: event.id,
-        type: event.type,
-        occurredAt: event.occurredAt,
-        recordedAt: event.recordedAt,
-        actorRole: event.actorRole,
-        organization: event.organization,
-        details: event.details,
-        evidenceSha256: event.evidenceSha256 ?? null,
-      })),
-    certificates: [...record.certificates]
-      .sort((first, second) => first.recordedAt.localeCompare(second.recordedAt))
-      .map((certificate) => ({
-        id: certificate.id,
-        name: certificate.name,
-        issuer: certificate.issuer,
-        certificateNumber: certificate.certificateNumber,
-        issuedAt: certificate.issuedAt,
-        validUntil: certificate.validUntil,
-        evidenceSha256: certificate.evidenceSha256,
-        recordedByRole: certificate.recordedByRole,
-        recordedByOrganization: certificate.recordedByOrganization,
-        recordedAt: certificate.recordedAt,
-      })),
-  });
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(publicLotData));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-export function useLotAnchor(record: LotRecord) {
+export function useLotAnchor(
+  record: LotRecord,
+  { notifyProducer = false }: { notifyProducer?: boolean } = {},
+) {
   const { address, signTransaction } = useStellarWallet();
   const [isAnchoring, setIsAnchoring] = useState(false);
   const [isCheckingAnchor, setIsCheckingAnchor] = useState(false);
@@ -145,10 +107,25 @@ export function useLotAnchor(record: LotRecord) {
       const transaction = await anchorLotHash(address, record.id, hash, signTransaction);
 
       setResult({ transactionHash: transaction.transactionHash, feeXlm: transaction.feeXlm });
+      let producerNotified: boolean | undefined;
+      if (notifyProducer) {
+        try {
+          const contractAdmin = await getTraceabilityContractAdmin();
+          if (contractAdmin === address) {
+            producerNotified = await notifyOwnerOfLotAnchor(record.id, transaction.transactionHash);
+          }
+        } catch {
+          producerNotified = false;
+        }
+      }
       await checkAnchor();
       toast.success("Huella confirmada en Stellar Testnet.", {
         id: toastId,
-        description: `Tarifa de red: ${transaction.feeXlm} XLM`,
+        description: notifyProducer
+          ? producerNotified
+            ? `El Productor recibirá un aviso. Tarifa de red: ${transaction.feeXlm} XLM`
+            : `Huella confirmada, pero no se pudo guardar el aviso al Productor. Tarifa: ${transaction.feeXlm} XLM`
+          : `Tarifa de red: ${transaction.feeXlm} XLM`,
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo registrar la huella.", {

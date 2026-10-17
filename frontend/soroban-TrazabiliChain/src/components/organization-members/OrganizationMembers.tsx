@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 import {
   addOrganizationMember,
   demoRoles,
@@ -25,10 +26,22 @@ function normalizeOrganization(value: string) {
   return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("es");
 }
 
+function organizationDraftKey(value: string) {
+  let hash = 2166136261;
+  for (const character of normalizeOrganization(value)) {
+    hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  }
+  return `organization-member-${(hash >>> 0).toString(36)}`;
+}
+
 export function OrganizationMembers({
   organization: activeOrganization,
+  draftUserId,
+  product,
 }: {
   organization: string;
+  draftUserId: string | null;
+  product: string;
 }) {
   const allMembers = useOrganizationMembers();
   const members = allMembers.filter(
@@ -40,6 +53,18 @@ export function OrganizationMembers({
   const [organization, setOrganization] = useState(activeOrganization);
   const [role, setRole] = useState<DemoRole>("producer");
   const [message, setMessage] = useState("");
+  const memberDraft = useWorkDraft({
+    userId: draftUserId,
+    role: "organizationAdmin",
+    product,
+    draftKey: organizationDraftKey(activeOrganization),
+    payload: { name, organization, role },
+    onRestore: (draft) => {
+      if (draft.name !== undefined) setName(draft.name);
+      if (draft.organization !== undefined) setOrganization(draft.organization);
+      if (draft.role !== undefined && demoRoles.includes(draft.role)) setRole(draft.role);
+    },
+  });
 
   function addMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,6 +91,7 @@ export function OrganizationMembers({
     toast.success(successMessage);
     setName("");
     setEditingMemberId(null);
+    void memberDraft.clearDraft();
   }
 
   function deleteMember(id: string, memberName: string) {
@@ -91,7 +117,11 @@ export function OrganizationMembers({
         organización indicada en el perfil actual.
       </p>
 
-      <form className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2" onSubmit={addMember}>
+      <form
+        className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2"
+        onSubmit={addMember}
+        inert={!memberDraft.isReady}
+      >
         <div className="grid min-w-0 gap-1.5">
           <label htmlFor="member-name" className="text-sm font-semibold text-ink">
             Nombre del miembro
@@ -160,6 +190,11 @@ export function OrganizationMembers({
           </button>
         )}
       </form>
+      {!memberDraft.isReady && (
+        <p className="mt-2 mb-0 text-sm text-gray-700" role="status" aria-live="polite">
+          Restaurando el formulario de miembros…
+        </p>
+      )}
       <p className="mt-3 min-h-5 text-sm text-accent" role="status" aria-live="polite">
         {message}
       </p>

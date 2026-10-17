@@ -4,8 +4,15 @@ import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 
-export function ConsumerScanner() {
+export function ConsumerScanner({
+  draftUserId,
+  product,
+}: {
+  draftUserId: string | null;
+  product: string;
+}) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
@@ -13,6 +20,16 @@ export function ConsumerScanner() {
   const [identifier, setIdentifier] = useState("");
   const [message, setMessage] = useState("");
   const [isCameraConfirmationOpen, setIsCameraConfirmationOpen] = useState(false);
+  const scannerDraft = useWorkDraft({
+    userId: draftUserId,
+    role: "consumer",
+    product,
+    draftKey: "consumer-scan",
+    payload: { identifier },
+    onRestore: (draft) => {
+      if (draft.identifier !== undefined) setIdentifier(draft.identifier);
+    },
+  });
 
   function stopScanning() {
     controlsRef.current?.stop();
@@ -131,7 +148,11 @@ export function ConsumerScanner() {
         </button>
       )}
 
-      <form className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]" onSubmit={submitIdentifier}>
+      <form
+        className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]"
+        onSubmit={submitIdentifier}
+        inert={!scannerDraft.isReady}
+      >
         <div className="grid gap-1.5">
           <label htmlFor="public-lot-id" className="text-sm font-semibold text-ink">
             Identificador o URL del QR
@@ -152,6 +173,11 @@ export function ConsumerScanner() {
           Consultar
         </button>
       </form>
+      {!scannerDraft.isReady && (
+        <p className="mt-2 mb-0 text-sm text-gray-700" role="status" aria-live="polite">
+          Restaurando tu búsqueda guardada…
+        </p>
+      )}
       <ConfirmDialog
         open={isCameraConfirmationOpen}
         title="Permitir el uso de la cámara"

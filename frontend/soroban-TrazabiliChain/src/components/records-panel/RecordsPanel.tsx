@@ -19,6 +19,8 @@ import { BuyerDashboard } from "@/components/buyer-dashboard/BuyerDashboard";
 import { AuditDashboard } from "@/components/audit-dashboard/AuditDashboard";
 import { ConsumerScanner } from "@/components/consumer-scanner/ConsumerScanner";
 import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
+import { LotJourney } from "@/components/lot-journey/LotJourney";
+import { ProducerAnchorNotifications } from "@/components/notifications/ProducerAnchorNotifications";
 import { TraceabilityAnchor } from "@/components/traceability-anchor/TraceabilityAnchor";
 import { BorderBeamFrame } from "@/components/ui/motion/BorderBeamFrame";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -36,6 +38,7 @@ import {
   type DemoRole,
   type LotRecord,
 } from "@/lib/lots/lot-storage";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 import {
   formatLotCharacteristics,
   getCurrencyDecimalSeparator,
@@ -82,10 +85,12 @@ function formatCreatedAt(value: string) {
 export function RecordsPanel({
   initialRole = "producer",
   initialProduct = "",
+  draftUserId = null,
   selectedLotId,
 }: {
   initialRole?: DemoRole;
   initialProduct?: string;
+  draftUserId?: string | null;
   selectedLotId?: string;
 }) {
   const storedRecords = useLotRecords();
@@ -135,6 +140,64 @@ export function RecordsPanel({
   const certificateCount = records.reduce((total, record) => total + record.certificates.length, 0);
   const activeRecords = records.filter((record) => !record.isDeleted);
   const retiredRecords = records.filter((record) => record.isDeleted);
+  const profileContextDraft = useWorkDraft({
+    userId: draftUserId,
+    role,
+    product: initialProduct,
+    draftKey: "profile-context",
+    payload: { actorName, activeOrganization },
+    onRestore: (draft) => {
+      if (draft.actorName !== undefined) setActorName(draft.actorName);
+      if (draft.activeOrganization !== undefined) setActiveOrganization(draft.activeOrganization);
+    },
+  });
+  const producerDraft = {
+    form,
+    variety,
+    presentation,
+    harvest,
+    quality,
+    quantity,
+    price,
+    currency,
+    unit,
+    otherProductDetails,
+    originCity,
+    originDepartment,
+    originCountry,
+    originRegionCode,
+    isManualCity,
+    isManualDepartment,
+  };
+  const { isReady: isDraftReady, clearDraft: clearProducerDraft } = useWorkDraft({
+    userId: draftUserId,
+    role,
+    product: initialProduct,
+    draftKey: "producer-lot",
+    payload: producerDraft,
+    enabled: role === "producer",
+    onRestore: (draft) => {
+      if (draft.form) {
+        setForm({ ...initialForm, ...draft.form, product: initialProduct });
+      }
+      if (draft.variety !== undefined) setVariety(draft.variety);
+      if (draft.presentation !== undefined) setPresentation(draft.presentation);
+      if (draft.harvest !== undefined) setHarvest(draft.harvest);
+      if (draft.quality !== undefined) setQuality(draft.quality);
+      if (draft.quantity !== undefined) setQuantity(draft.quantity);
+      if (draft.price !== undefined) setPrice(draft.price);
+      if (draft.currency !== undefined) setCurrency(draft.currency);
+      if (draft.unit !== undefined) setUnit(draft.unit);
+      if (draft.otherProductDetails !== undefined)
+        setOtherProductDetails(draft.otherProductDetails);
+      if (draft.originCity !== undefined) setOriginCity(draft.originCity);
+      if (draft.originDepartment !== undefined) setOriginDepartment(draft.originDepartment);
+      if (draft.originCountry !== undefined) setOriginCountry(draft.originCountry);
+      if (draft.originRegionCode !== undefined) setOriginRegionCode(draft.originRegionCode);
+      if (draft.isManualCity !== undefined) setIsManualCity(draft.isManualCity);
+      if (draft.isManualDepartment !== undefined) setIsManualDepartment(draft.isManualDepartment);
+    },
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -357,6 +420,7 @@ export function RecordsPanel({
       setPhotoDataUrl("");
       setPhotoFile(null);
       setFieldErrors({});
+      await clearProducerDraft();
     } catch {
       const message = "No se pudo guardar el lote. Comprueba la conexión e inténtalo de nuevo.";
       setStorageError(true);
@@ -368,7 +432,7 @@ export function RecordsPanel({
     }
   }
 
-  if (isLoadingRecords || storageError) {
+  if (isLoadingRecords || !isDraftReady || storageError) {
     return (
       <section
         ref={panelRef}
@@ -377,7 +441,9 @@ export function RecordsPanel({
         className="scroll-mt-8 py-8"
       >
         <h1 id="page-title" className="font-display text-2xl font-medium text-ink">
-          {isLoadingRecords ? "Cargando tus lotes…" : "No se pudieron cargar tus lotes"}
+          {isLoadingRecords || !isDraftReady
+            ? "Cargando tus lotes y borrador…"
+            : "No se pudieron cargar tus lotes"}
         </h1>
         <p
           className={`mt-2 mb-0 text-sm leading-6 ${storageError ? "text-red-800" : "text-gray-700"}`}
@@ -387,7 +453,9 @@ export function RecordsPanel({
           {storageError
             ? storageMessage ||
               "Verifica la conexión y los permisos de tu cuenta e inténtalo de nuevo."
-            : "Consultando los registros permitidos para tu cuenta."}
+            : !isDraftReady
+              ? "Restaurando tu trabajo guardado para esta cuenta."
+              : "Consultando los registros permitidos para tu cuenta."}
         </p>
       </section>
     );
@@ -419,6 +487,8 @@ export function RecordsPanel({
           <WalletConnect />
         </div>
       </div>
+
+      {role === "producer" && <ProducerAnchorNotifications />}
 
       <BorderBeamFrame>
         <dl className="my-6 grid grid-cols-2 divide-x divide-y divide-line border-y border-line bg-white sm:grid-cols-4 sm:divide-y-0">
@@ -491,6 +561,7 @@ export function RecordsPanel({
             required
             maxLength={100}
             rows={2}
+            disabled={!profileContextDraft.isReady}
             value={actorName}
             aria-invalid={Boolean(fieldErrors["demo-actor"])}
             aria-describedby={fieldErrors["demo-actor"] ? "demo-actor-error" : undefined}
@@ -512,6 +583,7 @@ export function RecordsPanel({
             required
             maxLength={120}
             rows={2}
+            disabled={!profileContextDraft.isReady}
             value={activeOrganization}
             aria-invalid={Boolean(fieldErrors["demo-organization"])}
             aria-describedby={
@@ -526,6 +598,11 @@ export function RecordsPanel({
           />
           <FormFieldError id="demo-organization-error" message={fieldErrors["demo-organization"]} />
         </div>
+        {!profileContextDraft.isReady && (
+          <p className="mb-0 text-xs text-gray-700 sm:col-span-2" role="status" aria-live="polite">
+            Restaurando el contexto guardado para esta cuenta…
+          </p>
+        )}
       </section>
 
       <RoleGuide key={role} role={role} />
@@ -1116,6 +1193,7 @@ export function RecordsPanel({
               open={isCreateConfirmationOpen}
               title="Revisa los datos del lote"
               description="Comprueba producto, características, ubicación y organización antes de guardar el registro."
+              helperText="Al guardar se creará el ID del lote. Cópialo desde el QR; para buscarlo después usa sus primeros 8 caracteres, no la URL completa."
               isBusy={isSavingRecord}
               onCancel={() => {
                 createConfirmed.current = false;
@@ -1157,6 +1235,8 @@ export function RecordsPanel({
               actorName={actorName}
               actorRole={role}
               organization={activeOrganization}
+              draftUserId={draftUserId}
+              product={initialProduct}
             />
           </section>
         )}
@@ -1167,19 +1247,30 @@ export function RecordsPanel({
               actorName={actorName}
               actorRole={role}
               organization={activeOrganization}
+              draftUserId={draftUserId}
+              product={initialProduct}
             />
           </section>
         )}
         {role === "organizationAdmin" && (
           <section data-enter data-tour-work className="lg:col-span-2">
-            <OrganizationMembers key={activeOrganization} organization={activeOrganization} />
-            <TraceabilityActorAccess />
+            <OrganizationMembers
+              key={activeOrganization}
+              organization={activeOrganization}
+              draftUserId={draftUserId}
+              product={initialProduct}
+            />
+            <TraceabilityActorAccess draftUserId={draftUserId} product={initialProduct} />
           </section>
         )}
         {role === "b2bBuyer" && (
           <section data-enter data-tour-work className="lg:col-span-2">
-            <BuyerDashboard records={records} />
-            <TrustlessWorkEscrow records={records} />
+            <BuyerDashboard records={records} draftUserId={draftUserId} product={initialProduct} />
+            <TrustlessWorkEscrow
+              records={records}
+              draftUserId={draftUserId}
+              product={initialProduct}
+            />
           </section>
         )}
         {role === "auditor" && (
@@ -1188,12 +1279,13 @@ export function RecordsPanel({
               records={records}
               actorName={actorName}
               organization={activeOrganization}
+              draftUserId={draftUserId}
             />
           </section>
         )}
         {role === "consumer" && (
           <section data-enter data-tour-work className="lg:col-span-2">
-            <ConsumerScanner />
+            <ConsumerScanner draftUserId={draftUserId} product={initialProduct} />
           </section>
         )}
 
@@ -1307,6 +1399,7 @@ export function RecordsPanel({
                         </dd>
                       </div>
                     </dl>
+                    <LotJourney record={record} />
                     {record.events.length > 0 && (
                       <section
                         className="mt-4 border-t border-line pt-4"
@@ -1411,12 +1504,36 @@ export function RecordsPanel({
                         Publicar ficha de consulta del QR
                       </label>
                     )}
-                    {!record.isDeleted && <TraceabilityAnchor record={record} />}
+                    {!record.isDeleted && (
+                      <TraceabilityAnchor
+                        record={record}
+                        allowAnchoring={
+                          role === "producer" ||
+                          role === "organizationAdmin" ||
+                          (role === "supplyActor" &&
+                            record.events.some(
+                              (event) =>
+                                event.actorRole === role &&
+                                event.actorName === actorName &&
+                                event.organization === activeOrganization,
+                            )) ||
+                          (role === "certifier" &&
+                            record.certificates.some(
+                              (certificate) =>
+                                certificate.recordedByRole === role &&
+                                certificate.recordedBy === actorName &&
+                                certificate.recordedByOrganization === activeOrganization,
+                            ))
+                        }
+                        notifyProducer={role === "organizationAdmin"}
+                      />
+                    )}
                     {role === "producer" && (
                       <LotManagement
                         record={record}
                         actorName={actorName.trim() || "Responsable de la cuenta"}
                         actorRole={role}
+                        draftUserId={draftUserId}
                       />
                     )}
                   </li>

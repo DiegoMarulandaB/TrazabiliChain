@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
 import { StellarWalletProvider } from "@/components/providers/StellarWalletProvider";
 import { RecordsPanel } from "@/components/records-panel/RecordsPanel";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 import {
   demoRoles,
   findOwnedLotRecordsByPrefix,
@@ -27,7 +28,14 @@ type AccessStage =
 type AuthMode = "signIn" | "signUp";
 const productOptions = ["Café orgánico", "Cacao orgánico", "Algodón orgánico"];
 const workflowRoleEventName = "trazabilichain:workflow-role-change";
-const rolesWithAccountLotHistory: DemoRole[] = ["producer", "organizationAdmin"];
+const rolesWithDashboardLotList: DemoRole[] = ["producer", "b2bBuyer"];
+const rolesWithLotPrefixLookup: DemoRole[] = [
+  "supplyActor",
+  "certifier",
+  "organizationAdmin",
+  "auditor",
+  "consumer",
+];
 const roleDescriptions: Record<DemoRole, string> = {
   producer: "Registra lotes y su origen; después puede publicar un QR y anclar una huella.",
   supplyActor: "Añade al historial los traslados y otras etapas de la cadena.",
@@ -57,6 +65,33 @@ export function RecordsAuth() {
   const [messageType, setMessageType] = useState<"success" | "error" | "info">("error");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const loginTourRef = useRef<ReturnType<typeof driver> | null>(null);
+  const workspacePreferencesDraft = useWorkDraft({
+    userId: authUserId,
+    role: "producer",
+    product: productOptions[0],
+    draftKey: "workspace-preferences",
+    payload: { workflowRole, selectedProduct },
+    enabled: Boolean(authUserId),
+    onRestore: (draft) => {
+      if (draft.workflowRole && demoRoles.includes(draft.workflowRole)) {
+        setWorkflowRole(draft.workflowRole);
+      }
+      if (draft.selectedProduct && productOptions.includes(draft.selectedProduct)) {
+        setSelectedProduct(draft.selectedProduct);
+      }
+    },
+  });
+  const lotLookupDraft = useWorkDraft({
+    userId: authUserId,
+    role: workflowRole,
+    product: selectedProduct,
+    draftKey: "lot-lookup",
+    payload: { lotPrefix },
+    enabled: stage === "lotLookup",
+    onRestore: (draft) => {
+      if (draft.lotPrefix !== undefined) setLotPrefix(draft.lotPrefix);
+    },
+  });
 
   useEffect(() => () => loginTourRef.current?.destroy(), []);
 
@@ -148,9 +183,11 @@ export function RecordsAuth() {
       setAuthUserId(accountSession ? session.user.id : null);
       setStage(
         accountSession
-          ? rolesWithAccountLotHistory.includes(workflowRole)
+          ? rolesWithDashboardLotList.includes(workflowRole)
             ? "dashboard"
-            : "lotLookup"
+            : rolesWithLotPrefixLookup.includes(workflowRole)
+              ? "lotLookup"
+              : "dashboard"
           : "credentials",
       );
       if (event === "SIGNED_IN" && accountSession) {
@@ -166,7 +203,12 @@ export function RecordsAuth() {
 
   function continueAfterAuthentication() {
     void saveProductNotificationPreference(selectedProduct);
-    setStage(rolesWithAccountLotHistory.includes(workflowRole) ? "dashboard" : "lotLookup");
+    setStage(
+      rolesWithDashboardLotList.includes(workflowRole) ||
+        !rolesWithLotPrefixLookup.includes(workflowRole)
+        ? "dashboard"
+        : "lotLookup",
+    );
   }
 
   function selectWorkflowRole(value: string) {
@@ -373,6 +415,14 @@ export function RecordsAuth() {
     setStage("dashboard");
   }
 
+  if (stage === "dashboard" && authUserId && !workspacePreferencesDraft.isReady) {
+    return (
+      <p className="mx-auto max-w-xl py-12 text-sm text-gray-700" role="status" aria-live="polite">
+        Restaurando el perfil y producto de esta cuenta…
+      </p>
+    );
+  }
+
   if (stage === "dashboard") {
     return (
       <StellarWalletProvider key={authUserId ?? "authenticated-session"}>
@@ -393,8 +443,9 @@ export function RecordsAuth() {
           <RecordsPanel
             initialRole={workflowRole}
             initialProduct={selectedProduct}
+            draftUserId={authUserId}
             selectedLotId={
-              rolesWithAccountLotHistory.includes(workflowRole) ? undefined : selectedLotId
+              rolesWithDashboardLotList.includes(workflowRole) ? undefined : selectedLotId
             }
           />
         </>
@@ -491,21 +542,27 @@ export function RecordsAuth() {
               pattern="[0-9a-fA-F]{8}[0-9a-fA-F-]{0,28}"
               autoComplete="off"
               spellCheck={false}
+              disabled={!lotLookupDraft.isReady}
               value={lotPrefix}
               onChange={(event) => setLotPrefix(event.target.value)}
-              className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 font-mono text-sm text-ink"
+              className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 font-mono text-sm text-ink disabled:opacity-60"
               aria-describedby="lot-prefix-help"
             />
             <p id="lot-prefix-help" className="mb-0 text-xs leading-5 text-gray-700">
-              Puedes escribir más caracteres si aparecen varias coincidencias.
+              Usa los primeros 8 caracteres del ID del QR. Puedes añadir más si aparecen varias
+              coincidencias.
             </p>
           </div>
           <button
             type="submit"
-            disabled={isSearchingLots}
+            disabled={isSearchingLots || !lotLookupDraft.isReady}
             className="min-h-11 self-end rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746] disabled:cursor-wait disabled:opacity-60"
           >
-            {isSearchingLots ? "Buscando…" : "Buscar lote"}
+            {!lotLookupDraft.isReady
+              ? "Restaurando…"
+              : isSearchingLots
+                ? "Buscando…"
+                : "Buscar lote"}
           </button>
         </form>
         {candidates.length > 0 && (

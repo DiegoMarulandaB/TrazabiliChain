@@ -16,6 +16,7 @@ La aplicación está en `frontend/soroban-TrazabiliChain`. El crate `traceabilit
 - `qrcode.react` para generar los códigos QR en el navegador.
 - `@zxing/browser` para escanear códigos QR con la cámara.
 - `country-state-city` para catálogos de regiones y ciudades según el país seleccionado.
+- `driver.js` para recorridos interactivos en el login y los perfiles.
 - Phosphor Icons para los iconos de redes y acciones.
 - `@creit.tech/stellar-wallets-kit` para conectar wallets y solicitar firmas.
 - `@stellar/stellar-sdk` para RPC Soroban, simulación, tarifas y envío de transacciones.
@@ -53,7 +54,7 @@ El repositorio fija pnpm `8.15.9`, compatible con el lockfile v6. No instales co
 ### Variables y servicios
 
 1. Desde `frontend/soroban-TrazabiliChain`, crea tu archivo local: `cp .env.example .env.local`. `.env.local` está excluido por `.gitignore`. El archivo local de este entorno ya contiene el ID público del contrato Testnet; no contiene secretos.
-2. Crea un proyecto Supabase, aplica `supabase/migrations/202610150001_traceability_lots.sql` desde su SQL Editor y configura `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` desde **Project Settings > API**. Nunca uses la `service_role` key en el navegador.
+2. Crea un proyecto Supabase y aplica `202610150001_traceability_lots.sql`, `202610170001_traceability_work_drafts.sql` y `202610170002_lot_anchor_notifications.sql` desde su SQL Editor. Configura `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` desde **Project Settings > API**. Nunca uses la `service_role` key en el navegador.
 3. Mantén **Anonymous Sign-Ins** desactivado y habilita **Email**. En **Authentication > Sign In / Providers > Email**, desactiva **Confirm Email** para que el registro cree una sesión sin enviar un código. Habilita el envío de correo de recuperación y permite `http://localhost:3000/registros` (y la URL de producción) en **Authentication > URL Configuration > Redirect URLs**. El acceso usa `signUp` y `signInWithPassword`; recuperar contraseña envía un enlace, no un OTP de login. La tabla de lotes guarda solo `owner_id = auth.uid()`, no email ni contraseña. RLS limita cada fila a su dueño.
 4. `NEXT_PUBLIC_SITE_URL` define el host que se codifica en el QR. Usa `http://localhost:3000` para escanear desde el mismo equipo; para probar con un teléfono usa `http://<IP-LAN-del-equipo>:3000`, y en producción el dominio HTTPS. Autoriza esa URL en Supabase y reinicia Next.js tras cambiar una variable `NEXT_PUBLIC_*`. Un teléfono no puede resolver el `localhost` de otro equipo.
 5. Para anclar hashes no hace falta desplegar otra vez en este entorno: el contrato ya está desplegado en Testnet y su ID está en `.env.local`/`.env.example`. Revisa **Contrato de trazabilidad**.
@@ -112,7 +113,8 @@ El árbol actual ya separa responsabilidades por capas: `src/app` contiene rutas
 | `src/lib/stellar/trustless-work.ts`                               | Construye escrows y envía XDR firmado a la ruta servidor.                       |
 | `src/lib/supabase/client.ts`                                      | Cliente Supabase singleton para autenticación del navegador.                    |
 | `src/hooks/useStellarWallet.ts`                                   | Hook para leer el contexto de wallet.                                           |
-| `src/hooks/useLotAnchor.ts`                                       | Hash del lote, estado de escritura y notificaciones.                            |
+| `src/hooks/useLotAnchor.ts`                                       | Calcula, consulta y escribe hashes del lote; Admin puede notificar al Productor. |
+| `src/hooks/useWorkDraft.ts`                                       | Restaura y sincroniza borradores JSON privados por cuenta, perfil y producto.   |
 | `src/components/about-section/AboutSection.tsx`                   | Explica el propósito del producto y los límites de verificación.                |
 | `src/components/site-footer/SiteFooter.tsx`                       | Footer y enlaces de demostración a redes sociales.                              |
 | `src/components/splash-screen/SplashScreen.tsx`                   | Pantalla inicial, progreso y animación de entrada.                              |
@@ -130,6 +132,10 @@ El productor registra producto, características, origen, fecha y organización 
 
 La sesión de cuenta Supabase permite volver a iniciar sesión desde otro dispositivo. `useLotRecords` publica en React el snapshot después de lecturas y escrituras remotas.
 
+Los borradores de formularios se guardan en `traceability_work_drafts`, particionados por `auth.uid()`, perfil, producto y tipo de formulario. Esta tabla usa RLS para que cada usuario solo pueda leer y cambiar sus borradores. Aplica `supabase/migrations/202610170001_traceability_work_drafts.sql` para sincronizarlos entre navegadores. Se guardan campos de texto y selecciones; no se suben archivos, contraseñas, claves privadas ni estado de conexión de Freighter. Al cambiar de navegador, la wallet debe conectarse de nuevo.
+
+Los avisos de anclaje se escriben en `lot_anchor_notifications` solo para el dueño Supabase del lote y se muestran únicamente en el perfil Productor. La función valida `auth.uid() = owner_id`; no comparte datos del lote ni concede acceso entre usuarios. Aplica `supabase/migrations/202610170002_lot_anchor_notifications.sql` para activar esta notificación.
+
 La foto opcional del producto se guarda como dato del lote en el registro privado de Supabase, protegido por RLS del propietario. La migración `202610160002_public_lot_product_photo.sql` la incluye en la proyección solo cuando el dueño publica el lote; el productor también puede cambiarla o quitarla al editar. Los archivos PDF e imagen adjuntos como evidencia de eventos o certificados continúan en almacenamiento local.
 
 La migración `202610160001_public_lot_prefix_lookup.sql`, aplicada en Supabase, añade la búsqueda por prefijo del ID y producto sobre `public_traceability_lots`; no consulta la tabla privada ni concede permisos. Los perfiles internos siguen dependiendo de RLS para recuperar lotes propios.
@@ -144,13 +150,15 @@ Al abrir `/registros`, el panel permite recorrer los siguientes perfiles de trab
 | Actor de cadena               | Selecciona un lote y registra tipo, fecha/hora ocurrida, detalle, actor, rol y organización declarados; puede adjuntar evidencia opcional. Puede editar sus propios eventos.                                              |
 | Certificador                  | Asocia nombre, emisor, número y vigencia declarados; selecciona un archivo PDF/imagen. Se captura quién lo asoció, se calcula SHA-256 y el archivo se conserva en IndexedDB local. Puede editar sus propios certificados. |
 | Consumidor                    | Escanea el QR con cámara tras conceder permiso, o escribe su ID/URL. La ficha pública muestra datos declarados, cronología, certificados y huellas, sin publicar archivos.                                                |
-| Administrador de organización | Gestiona el directorio local declarado y revisa el historial de lotes propios de la cuenta; puede consultar la última huella de cada lote en Stellar Testnet. No concede acceso entre cuentas.                          |
+| Administrador de organización | Busca lotes propios por prefijo QR, gestiona el directorio local declarado y consulta la última huella en Stellar Testnet. No concede acceso entre cuentas.                                               |
 | Comprador B2B                 | Busca lotes y evidencia declarada; puede editar los parámetros del borrador de escrow antes de simularlo. Un contrato ya firmado/desplegado no se modifica desde el formulario.                                           |
 | Auditor                       | Revisa eventos ordenados por fecha de captura y recibe alertas básicas por fechas inconsistentes, rol ausente o eventos duplicados. Puede editar sus observaciones privadas, no la evidencia fuente.                      |
 
 Los eventos aceptan evidencia opcional con huella SHA-256. Se evita repetir el mismo evento y se rechaza asociar al lote el mismo número de certificado con la misma huella. Las alertas son comprobaciones simples de consistencia, no detección de fraude. La vigencia, identidad del certificador y legitimidad del documento son declaraciones sin verificación externa. Para usar la cámara se requiere un contexto seguro (HTTPS o localhost) y permiso explícito del navegador.
 
 El Productor edita o retira sus lotes; el historial separa los activos de los retirados y no cuenta las bajas lógicas como activos. Actor de cadena puede editar sus eventos propios (autor, rol y organización declarados coincidentes) y Certificador los certificados que registró. Administrador edita el directorio local de la organización declarada y consulta los lotes que RLS permite a la misma cuenta Supabase. En cada lote puede leer el contador y el último hash en Stellar Testnet y compararlo con la ficha actual; esta consulta de solo lectura no publica datos ni concede acceso a lotes de otras cuentas. Auditor puede añadir y editar sus observaciones privadas, pero no reescribe la evidencia fuente. Comprador edita parámetros de escrow antes de firmar; el formulario no edita contratos ya desplegados.
+
+La acción de anclaje solo se ofrece al Productor, al Administrador, y a un Actor de cadena o Certificador que ya haya agregado su propio registro al lote. Comprador, Auditor y Consumidor solo pueden consultar el hash. El contrato sigue exigiendo que la wallet sea admin o un actor autorizado; el selector de perfil no concede permiso on-chain. Cuando la wallet conectada es la administradora configurada, un anclaje confirmado solicita un aviso privado únicamente al dueño Supabase del lote. Aplica `supabase/migrations/202610170002_lot_anchor_notifications.sql`; el aviso aparece en el perfil Productor.
 
 El productor puede elegir café, cacao o algodón orgánicos; completar variedad, cosecha, calidad, valor/divisa y unidad, además de otros datos manuales. El origen separa finca, ciudad, región y país. El selector de ciudad carga inicialmente las localidades del país y luego puede afinarse al elegir región; también permite ingresar localidades ausentes. Cada perfil dispone de un tour Driver.js: comienza por la wallet (opcional para consulta), continúa con el contexto del registro y termina en la acción propia del rol. El acceso incluye una guía independiente de tres pasos: perfil, producto y credenciales. Crear lote, agregar evento, asociar certificado, autorizar/revocar una wallet y preparar/simular escrow requieren confirmación antes de ejecutar la operación. La cámara solicita confirmación antes de que el navegador muestre su petición de permiso.
 

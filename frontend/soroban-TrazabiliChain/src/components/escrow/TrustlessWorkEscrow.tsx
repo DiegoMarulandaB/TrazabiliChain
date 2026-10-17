@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
 import { buildSingleReleaseEscrow, submitSignedEscrow } from "@/lib/stellar/trustless-work";
 import type { LotRecord } from "@/lib/lots/lot-storage";
@@ -43,7 +44,15 @@ const addressFields: Array<{
   { key: "receiver", label: "Wallet que recibe el pago" },
 ];
 
-export function TrustlessWorkEscrow({ records }: { records: LotRecord[] }) {
+export function TrustlessWorkEscrow({
+  records,
+  draftUserId,
+  product,
+}: {
+  records: LotRecord[];
+  draftUserId: string | null;
+  product: string;
+}) {
   const { address, signTransaction } = useStellarWallet();
   const [fields, setFields] = useState(initialFields);
   const [selectedLotId, setSelectedLotId] = useState(records[0]?.id ?? "");
@@ -57,6 +66,19 @@ export function TrustlessWorkEscrow({ records }: { records: LotRecord[] }) {
   const escrowFormRef = useRef<HTMLFormElement>(null);
 
   const selectedLot = records.find((record) => record.id === selectedLotId);
+  const escrowDraft = useWorkDraft({
+    userId: draftUserId,
+    role: "b2bBuyer",
+    product,
+    draftKey: "b2b-escrow",
+    payload: { fields, selectedLotId },
+    onRestore: (draft) => {
+      if (draft.fields) setFields({ ...initialFields, ...draft.fields });
+      if (draft.selectedLotId && records.some((record) => record.id === draft.selectedLotId)) {
+        setSelectedLotId(draft.selectedLotId);
+      }
+    },
+  });
 
   function updateField(field: keyof EscrowFields, value: string) {
     setFields((current) => ({ ...current, [field]: value }));
@@ -191,7 +213,12 @@ export function TrustlessWorkEscrow({ records }: { records: LotRecord[] }) {
         </p>
       ) : (
         <>
-          <form ref={escrowFormRef} className="grid min-w-0 gap-5" onSubmit={prepareEscrow}>
+          <form
+            ref={escrowFormRef}
+            className="grid min-w-0 gap-5"
+            onSubmit={prepareEscrow}
+            inert={!escrowDraft.isReady}
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <label htmlFor="escrow-lot" className="text-sm font-semibold text-ink">
@@ -278,10 +305,16 @@ export function TrustlessWorkEscrow({ records }: { records: LotRecord[] }) {
               {phase === "building" ? "Construyendo y simulando…" : "Preparar y simular escrow"}
             </button>
           </form>
+          {!escrowDraft.isReady && (
+            <p className="mt-3 mb-0 text-sm text-gray-700" role="status" aria-live="polite">
+              Restaurando el borrador de compra de tu cuenta…
+            </p>
+          )}
           <ConfirmDialog
             open={isPreparationConfirmationOpen}
             title="Revisa los datos antes de simular"
             description="Confirma el lote, el monto, el activo y las wallets de cada rol. La simulación consultará Stellar Testnet, pero no enviará el escrow hasta que firmes después."
+            helperText="Conserva los primeros 8 caracteres del ID del lote que aparece en el QR para volver a localizarlo."
             isBusy={phase === "building"}
             onCancel={() => {
               preparationConfirmed.current = false;

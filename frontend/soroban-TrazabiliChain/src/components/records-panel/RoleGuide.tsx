@@ -22,8 +22,8 @@ const roleSteps: Record<DemoRole, { wallet: string; work: string }> = {
   },
   organizationAdmin: {
     wallet:
-      "Conecta la wallet administradora del contrato para autorizar o revocar actores. La wallet debe ser la configurada al desplegar el contrato y firmará cada cambio.",
-    work: "Agrega miembros al directorio local y asigna perfiles de demostración. Para permitir escrituras en Soroban, escribe la dirección Stellar del actor y pulsa Autorizar; confirma la dirección en la wallet. El directorio local no concede permisos on-chain.",
+      "Conecta la wallet administradora del contrato para autorizar actores y anclar lotes. Solo la dirección configurada al desplegar puede aprobar wallets; Freighter solicitará firma en Testnet.",
+    work: "Busca el lote con los primeros 8 caracteres de su ID. Puedes consultar su hash y anclar la versión actual. En Acceso de escritura, autoriza la dirección pública del actor, no la dirección administradora. El directorio local solo es una demo.",
   },
   b2bBuyer: {
     wallet:
@@ -32,7 +32,7 @@ const roleSteps: Record<DemoRole, { wallet: string; work: string }> = {
   },
   auditor: {
     wallet:
-      "Consultar el historial no requiere wallet. Conecta una wallet Stellar Testnet solo si vas a anclar una huella desde otra acción disponible.",
+      "Consultar el historial y el estado del anclaje no requiere wallet. El perfil Auditor no puede escribir en el contrato.",
     work: "Filtra los lotes y contrasta fechas, actores, eventos y certificados. Distingue los datos declarados de las huellas: una huella detecta cambios, pero no verifica por sí sola el origen físico.",
   },
   consumer: {

@@ -17,6 +17,7 @@ import {
   saveEvidenceFile,
 } from "@/lib/lots/evidence-storage";
 import { verifyCurrentPassword } from "@/lib/supabase/verify-current-password";
+import { useWorkDraft } from "@/hooks/useWorkDraft";
 
 const maximumFileSize = 10 * 1024 * 1024;
 const acceptedEvidenceTypes = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
@@ -26,11 +27,15 @@ export function CertificateForm({
   actorName,
   actorRole,
   organization,
+  draftUserId,
+  product,
 }: {
   records: LotRecord[];
   actorName: string;
   actorRole: DemoRole;
   organization: string;
+  draftUserId: string | null;
+  product: string;
 }) {
   const [lotId, setLotId] = useState(records[0]?.id ?? "");
   const [name, setName] = useState("");
@@ -62,6 +67,27 @@ export function CertificateForm({
   const editingEntry = ownedCertificates.find(
     ({ certificate }) => certificate.id === editingCertificateId,
   );
+  const certificateDraft = useWorkDraft({
+    userId: draftUserId,
+    role: actorRole,
+    product,
+    draftKey: "certificate",
+    payload: { lotId, name, issuer, certificateNumber, issuedAt, validUntil },
+    onRestore: (draft) => {
+      if (draft.lotId) {
+        setLotId(
+          records.some((record) => record.id === draft.lotId)
+            ? draft.lotId
+            : (records[0]?.id ?? ""),
+        );
+      }
+      if (draft.name) setName(draft.name);
+      if (draft.issuer) setIssuer(draft.issuer);
+      if (draft.certificateNumber) setCertificateNumber(draft.certificateNumber);
+      if (draft.issuedAt) setIssuedAt(draft.issuedAt);
+      if (draft.validUntil) setValidUntil(draft.validUntil);
+    },
+  });
 
   function reportError(message: string) {
     setMessage(message);
@@ -345,6 +371,7 @@ export function CertificateForm({
         className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2"
         noValidate
         onSubmit={submitCertificate}
+        inert={!certificateDraft.isReady}
       >
         <div className="grid gap-1.5 sm:col-span-2">
           <label htmlFor="certificate-lot" className="text-sm font-semibold text-ink">
@@ -613,6 +640,17 @@ export function CertificateForm({
               : "Asociar certificado"}
         </button>
       </form>
+      {!certificateDraft.isReady && (
+        <p className="mt-3 mb-0 text-sm text-gray-700" role="status" aria-live="polite">
+          Restaurando el borrador de tu cuenta…
+        </p>
+      )}
+      {certificateDraft.isReady && !file && !editingEntry?.certificate.evidenceFileName && (
+        <p className="mt-3 mb-0 text-xs text-gray-700" role="status">
+          El archivo de evidencia no se sincroniza entre navegadores. Selecciónalo nuevamente antes
+          de asociar el certificado.
+        </p>
+      )}
       {ownedCertificates.length > 0 && (
         <details className="mt-6 border-t border-line pt-4">
           <summary className="w-fit cursor-pointer text-sm font-semibold text-accent underline underline-offset-4">
@@ -652,6 +690,7 @@ export function CertificateForm({
             ? "Verifica los cambios; se guardarán con razón y contraseña en la auditoría del lote."
             : "Comprueba el lote, emisor, fechas, número y archivo de evidencia. El certificado quedará asociado al historial."
         }
+        helperText="Para buscar este lote en otro perfil, copia los primeros 8 caracteres de su ID desde el QR; no copies la URL completa."
         confirmLabel={editingCertificateId ? "Guardar cambios" : "Asociar certificado"}
         isBusy={isSaving}
         onCancel={() => {

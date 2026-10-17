@@ -39,7 +39,7 @@ export type LotAuditNote = {
   author: string;
   organization: string;
   text: string;
-  reason: string;
+  reason?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -91,6 +91,13 @@ export type OrganizationMember = {
   name: string;
   role: DemoRole;
   organization: string;
+};
+
+export type WorkDraftKey = {
+  userId: string;
+  role: DemoRole;
+  product: string;
+  draftKey: string;
 };
 
 const storageKey = "trazabilichain-demo-lots";
@@ -210,9 +217,10 @@ function normalizeLotAuditEntry(value: unknown): LotAuditEntry | null {
 function normalizeLotAuditNote(value: unknown): LotAuditNote | null {
   if (
     !isObject(value) ||
-    !["id", "author", "organization", "text", "reason", "createdAt", "updatedAt"].every(
+    !["id", "author", "organization", "text", "createdAt", "updatedAt"].every(
       (field) => typeof value[field] === "string",
-    )
+    ) ||
+    (value.reason !== undefined && typeof value.reason !== "string")
   ) {
     return null;
   }
@@ -222,7 +230,7 @@ function normalizeLotAuditNote(value: unknown): LotAuditNote | null {
     author: value.author as string,
     organization: value.organization as string,
     text: value.text as string,
-    reason: value.reason as string,
+    ...(typeof value.reason === "string" ? { reason: value.reason } : {}),
     createdAt: value.createdAt as string,
     updatedAt: value.updatedAt as string,
   };
@@ -605,6 +613,71 @@ export function removeOrganizationMember(id: string) {
     memberSnapshot = members;
     notifySubscribers();
     return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function loadWorkDraft<T extends Record<string, unknown>>({
+  userId,
+  role,
+  product,
+  draftKey,
+}: WorkDraftKey): Promise<T | null> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from("traceability_work_drafts")
+      .select("payload")
+      .eq("user_id", userId)
+      .eq("profile", role)
+      .eq("product", product)
+      .eq("draft_key", draftKey)
+      .maybeSingle();
+    if (error || !isObject(data?.payload)) return null;
+    return data.payload as T;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveWorkDraft(key: WorkDraftKey, payload: Record<string, unknown>) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return false;
+
+  try {
+    const { error } = await supabase.from("traceability_work_drafts").upsert(
+      {
+        user_id: key.userId,
+        profile: key.role,
+        product: key.product,
+        draft_key: key.draftKey,
+        payload,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,profile,product,draft_key" },
+    );
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteWorkDraft(key: WorkDraftKey) {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return false;
+
+  try {
+    const { error } = await supabase
+      .from("traceability_work_drafts")
+      .delete()
+      .eq("user_id", key.userId)
+      .eq("profile", key.role)
+      .eq("product", key.product)
+      .eq("draft_key", key.draftKey);
+    return !error;
   } catch {
     return false;
   }
