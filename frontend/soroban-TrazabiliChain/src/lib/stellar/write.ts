@@ -9,6 +9,14 @@ const contractId = process.env.NEXT_PUBLIC_TRACEABILITY_CONTRACT_ID;
 
 export type SignTransaction = (xdr: string) => Promise<string>;
 
+function explainSorobanError(message: string) {
+  if (/unauthorized|(?:host)?error\s*\(\s*contract\s*,\s*#?1\s*\)/i.test(message)) {
+    return "El contrato rechazó la huella: esta wallet no es la administradora ni está autorizada para escribir. Conecta la wallet administradora en el perfil Administrador de organización y autoriza esta dirección. Si no tienes acceso a esa cuenta, un administrador debe desplegar un contrato de Testnet nuevo con la wallet de demo como administrador.";
+  }
+
+  return message;
+}
+
 function hasContractError(
   value: unknown,
 ): value is { isErr: () => boolean; unwrapErr: () => { message: string } } {
@@ -27,15 +35,22 @@ async function simulateSignAndSubmit<T>(
   signTransaction: SignTransaction,
 ) {
   const server = new rpc.Server(testnetRpcUrl);
-  await invocation.simulate({ useUpgradedAuth: true });
+  try {
+    await invocation.simulate({ useUpgradedAuth: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(explainSorobanError(message));
+  }
 
   const simulation = invocation.simulation;
   if (!simulation || rpc.Api.isSimulationError(simulation)) {
-    throw new Error(simulation?.error ?? "Stellar no devolvió el resultado de la simulación.");
+    throw new Error(
+      explainSorobanError(simulation?.error ?? "Stellar no devolvió el resultado de la simulación."),
+    );
   }
 
   if (hasContractError(invocation.result) && invocation.result.isErr()) {
-    throw new Error(invocation.result.unwrapErr().message);
+    throw new Error(explainSorobanError(invocation.result.unwrapErr().message));
   }
 
   const preparedXdr = invocation.toXDR();
