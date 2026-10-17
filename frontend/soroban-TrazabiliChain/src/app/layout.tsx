@@ -3,6 +3,7 @@ import { StellarWalletProvider } from "@/components/providers/StellarWalletProvi
 import { SplashScreen } from "@/components/splash-screen/SplashScreen";
 import { Toaster } from "@/components/ui/feedback/Toaster";
 import "./globals.css";
+import "driver.js/dist/driver.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://trazabilichain.vercel.app/";
 const siteTitle = "TrazabiliChain | Trazabilidad del origen al destino";

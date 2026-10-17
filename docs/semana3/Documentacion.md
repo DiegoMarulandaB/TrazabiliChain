@@ -11,6 +11,7 @@ La aplicación está en `frontend/soroban-TrazabiliChain`. El crate `traceabilit
 - Next.js 16 con App Router.
 - React 19 y TypeScript.
 - Tailwind CSS 4 mediante el plugin PostCSS.
+- Driver.js para recorridos accesibles de inicio de sesión y guías por perfil.
 - GSAP y `@gsap/react` para animaciones.
 - `qrcode.react` para generar los códigos QR en el navegador.
 - `@zxing/browser` para escanear códigos QR con la cámara.
@@ -80,9 +81,9 @@ El árbol actual ya separa responsabilidades por capas: `src/app` contiene rutas
 | `src/app/opengraph-image.tsx`                                     | Genera una imagen social de 1200 × 630 píxeles mediante `next/og`.              |
 | `src/components/header/Header.tsx`                                | Navegación adaptable y enlace para saltar al contenido.                         |
 | `src/components/records-panel/RecordsPanel.tsx`                   | Dashboard, validación, historial y creación de lotes.                           |
-| `src/components/records-panel/RoleGuide.tsx`                      | Guía de dos pasos con explicación del rol y sus campos.                         |
+| `src/components/records-panel/RoleGuide.tsx`                      | Tour Driver.js con wallet, contexto y tarea de cada perfil.                     |
 | `src/components/records-panel/LotManagement.tsx`                  | Edición, baja lógica y registro de cambios por lote.                            |
-| `src/components/records-auth/RecordsAuth.tsx`                     | Registro e inicio de sesión por correo y contraseña, sin Google ni OTP.         |
+| `src/components/records-auth/RecordsAuth.tsx`                     | Registro y acceso por correo/contraseña, con guía Driver.js de tres pasos.       |
 | `src/components/records-auth/AnonymousRecordsSession.tsx`         | Componente legado; no se monta en `/registros`.                                 |
 | `src/components/organization-members/TraceabilityActorAccess.tsx` | Autoriza o revoca direcciones on-chain desde la wallet administradora.          |
 | `src/components/providers/StellarWalletProvider.tsx`              | Inicializa Stellar Wallets Kit en Testnet y expone firma de XDR.                |
@@ -151,7 +152,7 @@ Los eventos aceptan evidencia opcional con huella SHA-256. Se evita repetir el m
 
 El Productor edita o retira sus lotes; el historial separa los activos de los retirados y no cuenta las bajas lógicas como activos. Actor de cadena puede editar sus eventos propios (autor, rol y organización declarados coincidentes) y Certificador los certificados que registró. Administrador edita el directorio local de la organización declarada. Auditor puede añadir y editar sus observaciones privadas, pero no reescribe la evidencia fuente. Comprador edita parámetros de escrow antes de firmar; el formulario no edita contratos ya desplegados.
 
-El productor puede elegir café, cacao o algodón orgánicos; completar variedad, cosecha, calidad, valor/divisa y unidad, además de otros datos manuales. El origen separa finca, ciudad, región y país. Los catálogos geográficos muestran códigos y permiten escribir manualmente localidades ausentes. Cada perfil dispone de una guía que explica su rol y los campos de su formulario. Crear lote, agregar evento, asociar certificado, autorizar/revocar una wallet y preparar/simular escrow requieren confirmación antes de ejecutar la operación. La cámara solicita confirmación antes de que el navegador muestre su petición de permiso.
+El productor puede elegir café, cacao o algodón orgánicos; completar variedad, cosecha, calidad, valor/divisa y unidad, además de otros datos manuales. El origen separa finca, ciudad, región y país. El selector de ciudad carga inicialmente las localidades del país y luego puede afinarse al elegir región; también permite ingresar localidades ausentes. Cada perfil dispone de un tour Driver.js: comienza por la wallet (opcional para consulta), continúa con el contexto del registro y termina en la acción propia del rol. El acceso incluye una guía independiente de tres pasos: perfil, producto y credenciales. Crear lote, agregar evento, asociar certificado, autorizar/revocar una wallet y preparar/simular escrow requieren confirmación antes de ejecutar la operación. La cámara solicita confirmación antes de que el navegador muestre su petición de permiso.
 
 El historial del Productor separa lotes activos de retirados, con métricas diferentes; los retirados aparecen en una sección plegable y no se cuentan como activos. La campana se oculta al elegir Productor. Para los demás perfiles, las notificaciones son privadas por cuenta y filtradas por el cultivo seleccionado; solo se generan cuando un lote de ese cultivo se publica. Las migraciones `202610160003_product_notifications.sql` y `202610160004_cleanup_product_notifications.sql` deben aplicarse en Supabase para activar avisos y limpiar avisos obsoletos.
 
@@ -161,7 +162,7 @@ Los campos obligatorios muestran el error junto al control que falta y lo asocia
 
 ## 7. QR y opciones de compartir
 
-El código del QR usa una URL con el identificador del lote, con la forma `/lote/{id}` y el origen de `NEXT_PUBLIC_SITE_URL`. El dueño debe activar explícitamente la publicación; la vista SQL proyecta campos permitidos y excluye nombres personales y nombres de archivo. Para escanear desde un teléfono en desarrollo, configura el origen con la IP LAN del equipo en lugar de `localhost`.
+El código del QR usa una URL con el identificador del lote, con la forma `/lote/{id}` y el origen de `NEXT_PUBLIC_SITE_URL`. El dueño debe activar explícitamente la publicación; la vista SQL proyecta campos permitidos y excluye nombres personales y nombres de archivo. El SVG de la marca se incrusta en el centro con nivel de corrección alto; el contenido sigue siendo la URL pública original. Para escanear desde un teléfono en desarrollo, configura el origen con la IP LAN del equipo en lugar de `localhost`.
 
 El disclosure **Compartir** ofrece correo electrónico, X, LinkedIn, Instagram y copiar enlace. Las opciones de correo y redes generan sus respectivos enlaces de acción. Instagram no ofrece aquí una publicación web directa, por lo que copia la URL al portapapeles para que la persona la pegue en Instagram. Si el navegador bloquea el portapapeles, aparece un campo de solo lectura para copiarla manualmente.
 
@@ -176,6 +177,8 @@ El disclosure **Compartir** ofrece correo electrónico, X, LinkedIn, Instagram y
 - Las acciones e iconos tienen nombres accesibles; los iconos decorativos se ocultan a lectores de pantalla.
 - Los resultados de copia se anuncian mediante una región `role="status"`.
 - El foco visible se define globalmente y las vistas usan layouts adaptables de Tailwind.
+- Los tours de Driver.js permiten cerrar con Escape, ofrecen botones de navegación y progreso, respetan el ajuste de movimiento reducido y usan popovers limitados al ancho disponible.
+- El directorio del Administrador se presenta como tarjetas etiquetadas en móvil y como tabla semántica en pantallas mayores; no requiere desplazamiento horizontal en teléfonos.
 - El SplashScreen y las animaciones de GSAP respetan `prefers-reduced-motion`.
 - El escáner anuncia estados, permite detener la cámara y ofrece entrada manual como alternativa.
 - Los diálogos se implementan con `<dialog>` modal nativo, nombre y descripción accesibles, cierre y cancelación; `Escape` cierra sin ejecutar la operación. Selectores, casillas y acciones habilitados muestran cursor de mano, mientras las tarjetas de lote no anuncian una acción que no tienen.

@@ -122,6 +122,7 @@ export function LotSharing({ record }: { record: LotRecord }) {
           size={128}
           level="H"
           marginSize={2}
+          imageSettings={{ src: "/brand-mark.svg", width: 30, height: 30, excavate: true }}
           title={`Código QR del lote ${record.product}`}
           aria-label={`Código QR con el enlace público de consulta para el lote ${record.product}`}
         />

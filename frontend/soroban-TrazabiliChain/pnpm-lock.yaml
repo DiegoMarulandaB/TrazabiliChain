@@ -41,6 +41,9 @@ importers:
       country-state-city:
         specifier: ^3.2.1
         version: 3.2.1
+      driver.js:
+        specifier: ^1.10.1
+        version: 1.10.1
       gsap:
         specifier: ^3.15.0
         version: 3.15.0
@@ -4733,6 +4736,10 @@ packages:
     dependencies:
       esutils: 2.0.3
     dev: true
+
+  /driver.js@1.10.1:
+    resolution: {integrity: sha512-mpcJ15eIRWnGMykeIWjr0CdQF00/JzImFOEXy/VponYgMbP/y46t24MPBDO3PV/rH6CjdSe3T7WQ9cP3GvEPdQ==}
+    dev: false
 
   /dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}

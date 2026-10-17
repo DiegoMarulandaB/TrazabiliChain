@@ -1,8 +1,9 @@
 "use client";
 
 import { ArrowRight, LockKey } from "@phosphor-icons/react";
+import { driver } from "driver.js";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
 import { RecordsPanel } from "@/components/records-panel/RecordsPanel";
@@ -25,6 +26,16 @@ type AccessStage =
 type AuthMode = "signIn" | "signUp";
 const productOptions = ["Café orgánico", "Cacao orgánico", "Algodón orgánico"];
 const workflowRoleEventName = "trazabilichain:workflow-role-change";
+const roleDescriptions: Record<DemoRole, string> = {
+  producer: "Registra lotes y su origen; después puede publicar un QR y anclar una huella.",
+  supplyActor: "Añade al historial los traslados y otras etapas de la cadena.",
+  certifier: "Asocia certificados y sus archivos de evidencia a un lote.",
+  organizationAdmin:
+    "Gestiona el directorio local y, con la wallet administradora, autoriza actores en Soroban.",
+  b2bBuyer: "Consulta lotes y puede preparar un escrow opcional de prueba en Stellar Testnet.",
+  auditor: "Revisa eventos, certificados y datos declarados sin modificar la evidencia fuente.",
+  consumer: "Consulta la información que una organización decidió publicar mediante QR.",
+};
 
 export function RecordsAuth() {
   const router = useRouter();
@@ -42,6 +53,56 @@ export function RecordsAuth() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | "info">("error");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const loginTourRef = useRef<ReturnType<typeof driver> | null>(null);
+
+  useEffect(() => () => loginTourRef.current?.destroy(), []);
+
+  function startLoginGuide() {
+    loginTourRef.current?.destroy();
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    loginTourRef.current = driver({
+      animate: !reducedMotion,
+      allowClose: true,
+      allowKeyboardControl: true,
+      overlayClickBehavior: "close",
+      showProgress: true,
+      progressText: "{{current}} de {{total}}",
+      nextBtnText: "Siguiente",
+      prevBtnText: "Atrás",
+      doneBtnText: "Finalizar",
+      closeBtnLabel: "Cerrar guía",
+      popoverClass: "trazabili-tour",
+      steps: [
+        {
+          element: "[data-tour-login-profile]",
+          popover: {
+            title: "Paso 1 · Perfil de trabajo",
+            description: `${roleDescriptions[workflowRole]} El perfil organiza la interfaz; no concede permisos de cuenta.`,
+            side: "bottom",
+          },
+        },
+        {
+          element: "[data-tour-login-product]",
+          popover: {
+            title: "Paso 2 · Producto o lote",
+            description:
+              "Elige el producto para filtrar o relacionar la información de trabajo. Esta selección no crea una compra ni mueve dinero.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "[data-tour-login-credentials]",
+          popover: {
+            title: "Paso 3 · Correo y contraseña",
+            description:
+              "Ingresa las credenciales de tu cuenta de Supabase. La wallet Stellar es independiente: nunca escribas aquí una frase semilla ni una clave privada.",
+            side: "top",
+          },
+        },
+      ],
+    });
+    loginTourRef.current.drive();
+  }
 
   function notify(message: string, type: "success" | "error" | "info" = "error") {
     setMessage(message);
@@ -580,14 +641,22 @@ export function RecordsAuth() {
                 ? "Crea una cuenta con tu correo y contraseña para guardar y consultar tus lotes."
                 : "Ingresa tu correo y contraseña para acceder a tus lotes."}
             </p>
+            <button
+              type="button"
+              onClick={startLoginGuide}
+              className="mb-5 min-h-10 rounded-md border border-accent px-3 text-sm font-semibold text-accent underline-offset-2 hover:bg-accent-soft hover:underline"
+            >
+              Ver guía de acceso paso a paso
+            </button>
             <form className="grid gap-4" onSubmit={submitCredentials}>
-              <div className="grid gap-1.5">
+              <div className="grid gap-1.5" data-tour-login-profile>
                 <label htmlFor="workflow-profile" className="text-sm font-semibold text-ink">
-                  Perfil de trabajo
+                  Paso 1 · Perfil de trabajo
                 </label>
                 <select
                   id="workflow-profile"
                   required
+                  aria-describedby="workflow-profile-help"
                   value={workflowRole}
                   onChange={(event) => selectWorkflowRole(event.target.value)}
                   className="min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink"
@@ -598,10 +667,14 @@ export function RecordsAuth() {
                     </option>
                   ))}
                 </select>
+                <p id="workflow-profile-help" className="mb-0 text-xs leading-5 text-gray-700">
+                  {roleDescriptions[workflowRole]} Esta elección cambia las herramientas, no los
+                  permisos de tu cuenta.
+                </p>
               </div>
-              <div className="grid gap-1.5">
+              <div className="grid gap-1.5" data-tour-login-product>
                 <label htmlFor="workflow-product" className="text-sm font-semibold text-ink">
-                  Producto o lote
+                  Paso 2 · Producto o lote
                 </label>
                 <select
                   id="workflow-product"
@@ -617,52 +690,58 @@ export function RecordsAuth() {
                     </option>
                   ))}
                 </select>
+                <p className="mb-0 text-xs leading-5 text-gray-700">
+                  Elige el producto con el que quieres trabajar después de entrar.
+                </p>
               </div>
-              <div className="grid gap-1.5">
-                <label htmlFor="account-email" className="text-sm font-semibold text-ink">
-                  Correo electrónico
-                </label>
-                <input
-                  id="account-email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  maxLength={254}
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink"
-                  placeholder="nombre@organizacion.com"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <label htmlFor="account-password" className="text-sm font-semibold text-ink">
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <LockKey
-                    size={17}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-700"
-                    aria-hidden="true"
-                  />
+              <div className="grid gap-4" data-tour-login-credentials>
+                <p className="mb-0 text-sm font-semibold text-ink">Paso 3 · Correo y contraseña</p>
+                <div className="grid gap-1.5">
+                  <label htmlFor="account-email" className="text-sm font-semibold text-ink">
+                    Correo electrónico
+                  </label>
                   <input
-                    id="account-password"
-                    type="password"
-                    autoComplete={mode === "signUp" ? "new-password" : "current-password"}
-                    minLength={mode === "signUp" ? 15 : undefined}
-                    maxLength={64}
+                    id="account-email"
+                    type="email"
+                    autoComplete="email"
                     required
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="min-h-11 w-full rounded-md border border-line bg-white py-2 pl-10 pr-3 text-sm text-ink"
-                    placeholder="Contraseña"
-                    aria-describedby={mode === "signUp" ? "password-guidance" : undefined}
+                    maxLength={254}
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink"
+                    placeholder="nombre@organizacion.com"
                   />
                 </div>
-                {mode === "signUp" && (
-                  <p id="password-guidance" className="mb-0 text-xs leading-5 text-gray-700">
-                    Usa entre 15 y 64 caracteres; puedes usar una frase.
-                  </p>
-                )}
+                <div className="grid gap-1.5">
+                  <label htmlFor="account-password" className="text-sm font-semibold text-ink">
+                    Contraseña
+                  </label>
+                  <div className="relative">
+                    <LockKey
+                      size={17}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-700"
+                      aria-hidden="true"
+                    />
+                    <input
+                      id="account-password"
+                      type="password"
+                      autoComplete={mode === "signUp" ? "new-password" : "current-password"}
+                      minLength={mode === "signUp" ? 15 : undefined}
+                      maxLength={64}
+                      required
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="min-h-11 w-full rounded-md border border-line bg-white py-2 pl-10 pr-3 text-sm text-ink"
+                      placeholder="Contraseña"
+                      aria-describedby={mode === "signUp" ? "password-guidance" : undefined}
+                    />
+                  </div>
+                  {mode === "signUp" && (
+                    <p id="password-guidance" className="mb-0 text-xs leading-5 text-gray-700">
+                      Usa entre 15 y 64 caracteres; puedes usar una frase.
+                    </p>
+                  )}
+                </div>
               </div>
               {!hasSupabaseConfig && (
                 <p

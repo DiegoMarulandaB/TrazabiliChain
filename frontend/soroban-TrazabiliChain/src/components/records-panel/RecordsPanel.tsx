@@ -112,7 +112,7 @@ export function RecordsPanel({
   const [regionOptions, setRegionOptions] = useState<Array<{ code: string; name: string }>>([]);
   const [isManualCity, setIsManualCity] = useState(false);
   const [isManualDepartment, setIsManualDepartment] = useState(false);
-  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [isLoadingCities, setIsLoadingCities] = useState(true);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoDataUrl, setPhotoDataUrl] = useState("");
   const [isCreateConfirmationOpen, setIsCreateConfirmationOpen] = useState(false);
@@ -138,7 +138,7 @@ export function RecordsPanel({
 
   useEffect(() => {
     let isMounted = true;
-    void import("country-state-city").then(({ State }) => {
+    void import("country-state-city").then(({ City, State }) => {
       if (!isMounted) return;
       setRegionOptions(
         State.getStatesOfCountry(originCountry).map(({ isoCode, name }) => ({
@@ -146,6 +146,8 @@ export function RecordsPanel({
           name,
         })),
       );
+      setCityOptions((City.getCitiesOfCountry(originCountry) ?? []).map(({ name }) => name));
+      setIsLoadingCities(false);
     });
     return () => {
       isMounted = false;
@@ -388,7 +390,9 @@ export function RecordsPanel({
 
       <div className="my-5 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-5">
         <p className="mb-0 text-sm text-gray-700">Red para pruebas: Stellar Testnet</p>
-        <WalletConnect />
+        <div data-tour-wallet>
+          <WalletConnect />
+        </div>
       </div>
 
       <BorderBeamFrame>
@@ -422,6 +426,7 @@ export function RecordsPanel({
 
       <section
         aria-labelledby="demo-profile-title"
+        data-tour-profile
         className="my-6 grid gap-4 border border-line bg-white px-4 py-4 sm:grid-cols-2 sm:items-end sm:px-5"
       >
         <div className="sm:col-span-2">
@@ -495,7 +500,7 @@ export function RecordsPanel({
 
       <div className="grid gap-10 py-8 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)] lg:gap-12 lg:py-10">
         {role === "producer" && (
-          <section data-enter aria-labelledby="create-record-title">
+          <section data-enter data-tour-work aria-labelledby="create-record-title">
             <div className="mb-5">
               <h2
                 id="create-record-title"
@@ -832,10 +837,11 @@ export function RecordsPanel({
                   <label htmlFor="origin-city" className="text-xs font-semibold text-ink">
                     Ciudad o municipio
                   </label>
-                  {cityOptions.length > 0 && !isManualCity ? (
+                  {!isManualCity ? (
                     <select
                       id="origin-city"
                       required
+                      disabled={isLoadingCities}
                       aria-invalid={Boolean(fieldErrors["origin-city"])}
                       aria-describedby={
                         fieldErrors["origin-city"] ? "origin-city-error" : undefined
@@ -851,9 +857,11 @@ export function RecordsPanel({
                           clearFieldError("origin-city");
                         }
                       }}
-                      className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink"
+                      className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink disabled:cursor-wait disabled:opacity-60"
                     >
-                      <option value="">Selecciona una ciudad</option>
+                      <option value="">
+                        {isLoadingCities ? "Cargando ciudades…" : "Selecciona una ciudad"}
+                      </option>
                       {cityOptions.map((city) => (
                         <option key={city}>{city}</option>
                       ))}
@@ -974,6 +982,7 @@ export function RecordsPanel({
                     value={originCountry}
                     onChange={(event) => {
                       setOriginCountry(event.target.value);
+                      setIsLoadingCities(true);
                       clearFieldError("origin-country");
                       setOriginRegionCode("");
                       setOriginDepartment("");
@@ -1110,7 +1119,7 @@ export function RecordsPanel({
         )}
 
         {role === "supplyActor" && (
-          <section data-enter className="lg:col-span-2">
+          <section data-enter data-tour-work className="lg:col-span-2">
             <EventForm
               records={records}
               actorName={actorName}
@@ -1120,7 +1129,7 @@ export function RecordsPanel({
           </section>
         )}
         {role === "certifier" && (
-          <section data-enter className="lg:col-span-2">
+          <section data-enter data-tour-work className="lg:col-span-2">
             <CertificateForm
               records={records}
               actorName={actorName}
@@ -1130,19 +1139,19 @@ export function RecordsPanel({
           </section>
         )}
         {role === "organizationAdmin" && (
-          <section data-enter className="lg:col-span-2">
+          <section data-enter data-tour-work className="lg:col-span-2">
             <OrganizationMembers organization={activeOrganization} />
             <TraceabilityActorAccess />
           </section>
         )}
         {role === "b2bBuyer" && (
-          <section data-enter className="lg:col-span-2">
+          <section data-enter data-tour-work className="lg:col-span-2">
             <BuyerDashboard records={records} />
             <TrustlessWorkEscrow records={records} />
           </section>
         )}
         {role === "auditor" && (
-          <section data-enter className="lg:col-span-2">
+          <section data-enter data-tour-work className="lg:col-span-2">
             <AuditDashboard
               records={records}
               actorName={actorName}
@@ -1151,7 +1160,7 @@ export function RecordsPanel({
           </section>
         )}
         {role === "consumer" && (
-          <section data-enter className="lg:col-span-2">
+          <section data-enter data-tour-work className="lg:col-span-2">
             <ConsumerScanner />
           </section>
         )}

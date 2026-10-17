@@ -6,7 +6,7 @@ Antes del cierre, por impacto y esfuerzo, priorizamos: 1) habilitar acceso por c
 
 # Mejoras de interfaz implementadas
 
-Cada perfil muestra una guía accesible de dos pasos con el propósito del rol y explicación de sus campos. Crear lotes, eventos, certificados, autorizaciones y simulaciones de escrow requiere confirmación antes de continuar; la cámara muestra su aviso antes del permiso del navegador.
+El acceso ofrece una guía Driver.js de tres pasos: perfil de trabajo con una descripción del rol seleccionado, producto o lote, y correo/contraseña de Supabase. Cada perfil del panel tiene un recorrido Driver.js que empieza por la wallet Stellar, explica si es opcional para consulta y continúa con el contexto y las acciones del rol. Los recorridos admiten teclado, cierre y movimiento reducido. Crear lotes, eventos, certificados, autorizaciones y simulaciones de escrow requiere confirmación antes de continuar; la cámara muestra su aviso antes del permiso del navegador.
 
 El productor elige café, cacao o algodón orgánicos y registra atributos, ubicación y foto opcional. El control de archivo permite cambiar o quitar la imagen y muestra su nombre y vista previa. La foto es privada salvo que el dueño publique el lote y esté aplicada la migración de proyección pública. Los errores obligatorios aparecen junto al campo.
 
@@ -23,6 +23,7 @@ La migración `202610160001_public_lot_prefix_lookup.sql` ya está aplicada. Con
 ## Criterios de revisión
 
 - Verificar los pasos de guía y las acciones de los diálogos con teclado; `Escape`, cerrar y cancelar no deben ejecutar la operación.
+- Recorrer la guía del login y la de cada perfil con teclado y lector de pantalla; confirmar que el perfil explica su propósito y que la wallet no se presenta como requisito para consultar.
 - Registrar cada cultivo, seleccionar sus atributos y probar ubicaciones de distintos países y una localidad ingresada manualmente.
 - Añadir, cambiar y quitar la foto opcional; comprobar que la evidencia de evento se puede omitir y que el archivo de certificado no.
 - Enviar cada formulario con campos vacíos y confirmar que el mensaje aparece junto al control faltante y desaparece al corregirlo.
@@ -32,6 +33,8 @@ La migración `202610160001_public_lot_prefix_lookup.sql` ya está aplicada. Con
 - Cambiar el cultivo de interés y comprobar que la campana muestra solo avisos de ese cultivo y permanece oculta en Productor.
 - Probar que el selector de perfil no concede autorización y que RLS impide ver lotes de otro propietario.
 - Revisar el formulario en móvil/tablet: sin desbordamiento horizontal, valores de fecha visibles, etiquetas legibles y lector de pantalla.
+- Abrir el directorio del Administrador en ancho móvil y comprobar que las tarjetas permiten leer y operar sobre cada miembro sin scroll horizontal.
+- Escanear un QR con el logo central en varios tamaños y confirmar que sigue abriendo la misma ficha pública del lote.
 
 # Riesgos y pendientes
 

@@ -33,6 +33,7 @@ export function WalletConnect() {
         type="button"
         onClick={() => void handleConnect()}
         disabled={!isReady}
+        data-tour-wallet-control
         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold text-ink transition-colors hover:bg-paper disabled:cursor-wait disabled:opacity-60"
       >
         <Wallet size={17} aria-hidden="true" />

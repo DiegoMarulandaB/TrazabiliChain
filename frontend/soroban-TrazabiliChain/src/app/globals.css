@@ -115,3 +115,43 @@ button:disabled {
     animation: none;
   }
 }
+
+.driver-popover.trazabili-tour {
+  width: min(22rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  border: 1px solid #dce6e1;
+  border-radius: 6px;
+  color: #193332;
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+.trazabili-tour .driver-popover-title {
+  padding-right: 2rem;
+  color: #193332;
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: 1.125rem;
+}
+
+.trazabili-tour .driver-popover-description {
+  color: #435955;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.trazabili-tour .driver-popover-footer-btn {
+  min-height: 2.5rem;
+  border-color: #176b59;
+  border-radius: 4px;
+  color: #176b59;
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.trazabili-tour .driver-popover-footer-btn:not(.driver-popover-btn-disabled):hover {
+  background: #e3f1eb;
+}
+
+.trazabili-tour .driver-popover-footer-btn:focus-visible {
+  outline: 3px solid #176b59;
+  outline-offset: 3px;
+}

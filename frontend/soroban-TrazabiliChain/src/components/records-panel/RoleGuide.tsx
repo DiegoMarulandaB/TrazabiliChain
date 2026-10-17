@@ -1,61 +1,94 @@
 "use client";
 
-import { useState } from "react";
-import { roleLabels } from "@/components/organization-members/OrganizationMembers";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { driver } from "driver.js";
+import { useEffect } from "react";
 import type { DemoRole } from "@/lib/lots/lot-storage";
 
-const roleDescriptions: Record<DemoRole, string> = {
-  producer:
-    "Producto: café, cacao o algodón orgánico.\nVariedad, cosecha y calidad: opciones según el producto.\nValor, divisa y unidad: precio declarado por kg, tonelada o libra.\nOtros datos: información adicional escrita por ti.\nFinca, ciudad, región y país: lugar de origen.\nFecha del lote y organización responsable: identifica cuándo y quién registra.\nImagen: fotografía opcional del producto, privada para la cuenta.",
-  supplyActor:
-    "Lote: registro al que se añadirá el evento.\nTipo de evento: recepción, despacho, transformación, entrega, inspección u otro.\nFecha y hora: momento en que ocurrió.\nResponsable: actor y organización del perfil activo.\nDetalle: descripción del hito.\nEvidencia: archivo opcional PDF o imagen.",
-  certifier:
-    "Lote asociado: registro que respalda el documento.\nNombre y entidad emisora: datos declarados del certificado.\nCódigo o número: identificador del documento.\nArchivo: evidencia PDF o imagen obligatoria.\nFecha de emisión y vigencia: la fecha final es opcional.",
-  organizationAdmin:
-    "Nombre del miembro: persona agregada al directorio local.\nOrganización: entidad a la que pertenece.\nRol asignado: perfil de demostración.\nWallet Stellar del actor: dirección que se autoriza o revoca en el contrato; requiere firma de la wallet administradora.",
-  b2bBuyer:
-    "Lote asociado: producto de la compra.\nMonto y contrato del activo: valor USDC y activo de Testnet.\nAdministrador, aprobador y proveedor: wallets participantes.\nPlataforma, resolvedor de disputas y receptor: wallets de los demás roles.\nPreparar y simular: revisa la simulación antes de solicitar la firma.",
-  auditor:
-    "Búsqueda: reduce los resultados por lote o texto.\nLote: consulta producto, origen y responsable.\nEventos: revisa tipo, fecha, actor y detalle.\nCertificados: inspecciona emisor, vigencia y huella del archivo.",
-  consumer:
-    "Cámara: al aceptar el aviso, el navegador solicitará permiso para escanear.\nIdentificador o URL del QR: alternativa manual para encontrar la ficha pública.\nConsultar: abre los datos compartidos del lote.",
-};
-
-const formDescriptions: Record<DemoRole, string> = {
-  producer:
-    "Elige el producto, completa sus datos de cosecha y origen, y crea el registro del lote.",
-  supplyActor: "Selecciona el lote, indica el evento, su fecha y hora, y describe qué ocurrió.",
-  certifier:
-    "Elige un lote y completa los datos del certificado junto con su archivo de evidencia.",
-  organizationAdmin:
-    "Agrega miembros y asigna un rol de demostración; puedes gestionar acceso Stellar aparte.",
-  b2bBuyer:
-    "Consulta los lotes y completa los roles y montos antes de simular un escrow en Testnet.",
-  auditor: "Filtra y revisa las declaraciones de lotes, los eventos y sus certificados asociados.",
-  consumer: "Escribe el identificador o permite el acceso a la cámara para escanear el QR.",
+const roleSteps: Record<DemoRole, { wallet: string; work: string }> = {
+  producer: {
+    wallet:
+      "Conecta tu wallet Stellar Testnet antes de anclar una huella. Crear y guardar el lote en Supabase no requiere firma de blockchain.",
+    work: "Completa características y origen del café orgánico, revisa los datos y confirma el registro. Después puedes publicar el QR y anclar su huella; cada acción explica si requiere firma.",
+  },
+  supplyActor: {
+    wallet:
+      "Conecta una wallet Stellar Testnet si vas a anclar el evento. Guardar el evento y su evidencia en el registro no requiere firma on-chain.",
+    work: "Selecciona el lote, indica el tipo de hito, cuándo ocurrió y qué pasó. La evidencia es opcional. Revisa y confirma antes de guardar.",
+  },
+  certifier: {
+    wallet:
+      "Conecta una wallet Stellar Testnet si vas a anclar la huella. El registro del certificado y su archivo no requieren firma on-chain.",
+    work: "Asocia el certificado con un lote, completa emisor, número y vigencia, y adjunta el archivo requerido. Comprueba los datos antes de confirmar.",
+  },
+  organizationAdmin: {
+    wallet:
+      "Conecta la wallet administradora del contrato para autorizar o revocar actores. La wallet debe ser la configurada al desplegar el contrato y firmará cada cambio.",
+    work: "Agrega miembros al directorio local y asigna perfiles de demostración. Para permitir escrituras en Soroban, escribe la dirección Stellar del actor y pulsa Autorizar; confirma la dirección en la wallet. El directorio local no concede permisos on-chain.",
+  },
+  b2bBuyer: {
+    wallet:
+      "Conecta una wallet Stellar Testnet para preparar, firmar y enviar el escrow de prueba. No uses fondos ni claves de Mainnet.",
+    work: "Elige el lote, ingresa el monto USDC de prueba, el contrato del activo y las wallets de cada rol. Simula primero; revisa el contrato y la tarifa estimada. Solo al firmar se envía la operación a Testnet.",
+  },
+  auditor: {
+    wallet:
+      "Consultar el historial no requiere wallet. Conecta una wallet Stellar Testnet solo si vas a anclar una huella desde otra acción disponible.",
+    work: "Filtra los lotes y contrasta fechas, actores, eventos y certificados. Distingue los datos declarados de las huellas: una huella detecta cambios, pero no verifica por sí sola el origen físico.",
+  },
+  consumer: {
+    wallet:
+      "No necesitas conectar una wallet para consultar un lote. La wallet solo sirve para firmar operaciones de blockchain, no para escanear un QR.",
+    work: "Escanea el QR con permiso de cámara o escribe su URL/identificador. Revisa la ficha pública y recuerda que muestra información compartida por la organización, no una certificación física automática.",
+  },
 };
 
 export function RoleGuide({ role }: { role: DemoRole }) {
-  const [step, setStep] = useState(0);
-  const [open, setOpen] = useState(true);
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const tour = driver({
+      animate: !reducedMotion,
+      allowClose: true,
+      allowKeyboardControl: true,
+      overlayClickBehavior: "close",
+      showProgress: true,
+      progressText: "{{current}} de {{total}}",
+      nextBtnText: "Siguiente",
+      prevBtnText: "Atrás",
+      doneBtnText: "Finalizar",
+      closeBtnLabel: "Cerrar guía",
+      popoverClass: "trazabili-tour",
+      steps: [
+        {
+          element: "[data-tour-wallet]",
+          popover: {
+            title: "Paso 1 · Wallet de Stellar",
+            description: roleSteps[role].wallet,
+            side: "bottom",
+          },
+        },
+        {
+          element: "[data-tour-profile]",
+          popover: {
+            title: "Paso 2 · Revisa tu contexto",
+            description:
+              "Confirma el perfil y el producto elegidos. El nombre del actor y la organización son datos declarados para el registro; no verifican identidad ni conceden permisos.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "[data-tour-work]",
+          popover: {
+            title: `Paso 3 · ${role === "organizationAdmin" ? "Gestiona el acceso" : "Completa tu tarea"}`,
+            description: roleSteps[role].work,
+            side: "top",
+          },
+        },
+      ],
+    });
 
-  return (
-    <ConfirmDialog
-      open={open}
-      title={step === 0 ? `Paso 1 · ${roleLabels[role]}` : `Paso 2 · ${roleLabels[role]}`}
-      description={step === 0 ? roleDescriptions[role] : formDescriptions[role]}
-      confirmLabel={step === 0 ? "Siguiente" : "Listo"}
-      backLabel={step === 1 ? "Atrás" : undefined}
-      onCancel={() => setOpen(false)}
-      onBack={() => setStep(0)}
-      onConfirm={() => {
-        if (step === 0) {
-          setStep(1);
-        } else {
-          setOpen(false);
-        }
-      }}
-    />
-  );
+    tour.drive();
+    return () => tour.destroy();
+  }, [role]);
+
+  return null;
 }

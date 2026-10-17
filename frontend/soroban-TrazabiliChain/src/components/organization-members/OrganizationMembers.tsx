@@ -74,7 +74,7 @@ export function OrganizationMembers({
   }
 
   return (
-    <section aria-labelledby="members-title" className="max-w-3xl">
+    <section aria-labelledby="members-title" className="w-full min-w-0 max-w-3xl">
       <h2 id="members-title" className="font-display text-2xl font-medium text-ink">
         Miembros y roles de demostración
       </h2>
@@ -153,7 +153,56 @@ export function OrganizationMembers({
         {message}
       </p>
 
-      <div className="mt-5 overflow-x-auto rounded-md border border-line bg-white">
+      <ul className="mt-5 grid gap-3 p-0 sm:hidden" aria-label="Miembros de la organización">
+        {members.map((member) => (
+          <li key={member.id} className="list-none border border-line bg-white p-4">
+            <dl className="grid min-w-0 gap-3 text-sm">
+              <div className="min-w-0">
+                <dt className="text-xs font-semibold text-gray-700">Miembro</dt>
+                <dd className="mb-0 break-words text-ink">{member.name}</dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-xs font-semibold text-gray-700">Organización</dt>
+                <dd className="mb-0 break-words text-ink">{member.organization}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold text-gray-700">Perfil asignado</dt>
+                <dd className="mb-0 text-ink">{roleLabels[member.role]}</dd>
+              </div>
+            </dl>
+            <div className="mt-4 flex flex-wrap gap-4 border-t border-line pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingMemberId(member.id);
+                  setName(member.name);
+                  setOrganization(member.organization);
+                  setRole(member.role);
+                }}
+                className="min-h-10 font-semibold text-accent underline underline-offset-2"
+              >
+                Editar {member.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteMember(member.id, member.name)}
+                className="min-h-10 font-semibold text-red-800 underline underline-offset-2"
+              >
+                Quitar {member.name}
+              </button>
+            </div>
+          </li>
+        ))}
+        {members.length === 0 && (
+          <li className="list-none border border-line bg-white px-4 py-6 text-center text-sm text-gray-700">
+            {activeOrganization.trim()
+              ? "Todavía no hay miembros para esta organización."
+              : "Indica la organización del perfil de trabajo para gestionar sus miembros."}
+          </li>
+        )}
+      </ul>
+
+      <div className="mt-5 hidden overflow-x-auto rounded-md border border-line bg-white sm:block">
         <table className="w-full min-w-xl text-left text-sm">
           <caption className="sr-only">Miembros locales y roles asignados</caption>
           <thead className="border-b border-line bg-paper text-xs text-gray-700">
