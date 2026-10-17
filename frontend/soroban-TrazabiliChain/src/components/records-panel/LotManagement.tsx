@@ -8,7 +8,13 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { FileUploadField } from "@/components/ui/FileUploadField";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
+  formatLocalizedNumberInput,
+  formatNumberForCurrency,
+  getCurrencyDecimalSeparator,
+  getCurrencyLocale,
+  getCurrencySymbol,
   formatLotCharacteristics,
+  parseLocalizedNumber,
   parseLotCharacteristics,
   type LotCharacteristicsData,
 } from "@/lib/lots/lot-characteristics";
@@ -103,7 +109,9 @@ export function LotManagement({
         (!characteristics.variety.trim() ||
           !characteristics.presentation ||
           !characteristics.harvest.trim() ||
-          !characteristics.quality.trim())
+          !characteristics.quality.trim() ||
+          !Number.isFinite(Number(characteristics.quantity)) ||
+          Number(characteristics.quantity) <= 0)
       ) {
         setMessage("Completa variedad, presentación, cosecha y calidad antes de guardar.");
         setIsDialogOpen(false);
@@ -112,7 +120,8 @@ export function LotManagement({
       if (
         !isDelete &&
         characteristics.price.trim() &&
-        (!Number.isFinite(Number(characteristics.price)) || Number(characteristics.price) <= 0)
+        (!Number.isFinite(parseLocalizedNumber(characteristics.price, characteristics.currency)) ||
+          parseLocalizedNumber(characteristics.price, characteristics.currency) <= 0)
       ) {
         setMessage("El valor del producto debe ser un número mayor que cero.");
         setIsDialogOpen(false);
@@ -256,11 +265,12 @@ export function LotManagement({
               >
                 Producto
               </label>
-              <input
+              <textarea
                 id={`edit-product-${record.id}`}
+                rows={2}
                 value={product}
                 onChange={(event) => setProduct(event.target.value)}
-                className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
+                className="min-h-10 min-w-0 resize-y rounded-md border border-line px-3 py-2 text-sm"
               />
             </div>
             <div className="grid min-w-0 gap-1.5">
@@ -286,16 +296,17 @@ export function LotManagement({
                 >
                   Variedad
                 </label>
-                <input
+                <textarea
                   id={`edit-variety-${record.id}`}
+                  rows={2}
                   value={characteristics.variety}
                   onChange={(event) =>
                     setCharacteristics((current) => ({ ...current, variety: event.target.value }))
                   }
-                  className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
+                  className="min-h-10 min-w-0 resize-y rounded-md border border-line px-3 py-2 text-sm"
                 />
               </div>
-              <div className="grid min-w-0 gap-1.5">
+              <div className="grid min-w-0 gap-1.5 sm:col-span-2">
                 <label
                   htmlFor={`edit-presentation-${record.id}`}
                   className="text-xs font-semibold text-ink"
@@ -342,51 +353,69 @@ export function LotManagement({
                 >
                   Calidad
                 </label>
-                <input
+                <textarea
                   id={`edit-quality-${record.id}`}
+                  rows={2}
                   value={characteristics.quality}
                   onChange={(event) =>
                     setCharacteristics((current) => ({ ...current, quality: event.target.value }))
                   }
-                  className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
+                  className="min-h-10 min-w-0 resize-y rounded-md border border-line px-3 py-2 text-sm"
                 />
               </div>
-              <div className="grid min-w-0 gap-1.5">
+              <div className="grid min-w-0 gap-1.5 sm:col-span-2">
                 <label
                   htmlFor={`edit-price-${record.id}`}
                   className="text-xs font-semibold text-ink"
                 >
                   Valor (opcional)
                 </label>
-                <input
-                  id={`edit-price-${record.id}`}
-                  type="number"
-                  min="0.01"
-                  step="any"
-                  value={characteristics.price}
-                  onChange={(event) =>
-                    setCharacteristics((current) => ({ ...current, price: event.target.value }))
-                  }
-                  className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
-                />
-              </div>
-              <div className="grid min-w-0 grid-cols-2 gap-2">
-                <div className="grid min-w-0 gap-1.5">
-                  <label
-                    htmlFor={`edit-currency-${record.id}`}
-                    className="text-xs font-semibold text-ink"
+                <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_6rem] gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="flex min-h-10 min-w-10 items-center justify-center rounded-md border border-line bg-paper px-2 text-sm font-semibold text-ink"
                   >
-                    Divisa
-                  </label>
+                    {getCurrencySymbol(characteristics.currency)}
+                  </span>
+                  <input
+                    id={`edit-price-${record.id}`}
+                    type="text"
+                    inputMode="decimal"
+                    lang={getCurrencyLocale(characteristics.currency)}
+                    value={characteristics.price}
+                    placeholder={
+                      getCurrencyDecimalSeparator(characteristics.currency) === ","
+                        ? "100.000,00"
+                        : "100,000.00"
+                    }
+                    onChange={(event) =>
+                      setCharacteristics((current) => ({ ...current, price: event.target.value }))
+                    }
+                    onBlur={() =>
+                      setCharacteristics((current) => ({
+                        ...current,
+                        price: formatLocalizedNumberInput(current.price, current.currency),
+                      }))
+                    }
+                    className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
+                  />
                   <select
                     id={`edit-currency-${record.id}`}
                     value={characteristics.currency}
                     onChange={(event) =>
-                      setCharacteristics((current) => ({
-                        ...current,
-                        currency: event.target.value,
-                      }))
+                      setCharacteristics((current) => {
+                        const nextCurrency = event.target.value;
+                        const amount = parseLocalizedNumber(current.price, current.currency);
+                        return {
+                          ...current,
+                          currency: nextCurrency,
+                          ...(current.price.trim() && Number.isFinite(amount)
+                            ? { price: formatNumberForCurrency(amount, nextCurrency) }
+                            : {}),
+                        };
+                      })
                     }
+                    aria-label="Divisa del precio"
                     className="min-h-10 min-w-0 rounded-md border border-line bg-white px-2 text-sm"
                   >
                     {["COP", "USD", "EUR", "MXN", "PEN", "BRL", "GBP", "JPY", "CAD", "AUD"].map(
@@ -396,24 +425,42 @@ export function LotManagement({
                     )}
                   </select>
                 </div>
-                <div className="grid min-w-0 gap-1.5">
+                <div className="grid w-full max-w-sm min-w-0 grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-2">
                   <label
-                    htmlFor={`edit-unit-${record.id}`}
+                    htmlFor={`edit-quantity-${record.id}`}
                     className="text-xs font-semibold text-ink"
                   >
-                    Unidad
+                    Cantidad
                   </label>
+                  <input
+                    id={`edit-quantity-${record.id}`}
+                    type="number"
+                    min="0.001"
+                    step="any"
+                    inputMode="decimal"
+                    lang={getCurrencyLocale(characteristics.currency)}
+                    aria-label="Cantidad del producto"
+                    value={characteristics.quantity}
+                    onChange={(event) =>
+                      setCharacteristics((current) => ({
+                        ...current,
+                        quantity: event.target.value,
+                      }))
+                    }
+                    className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
+                  />
                   <select
                     id={`edit-unit-${record.id}`}
                     value={characteristics.unit}
                     onChange={(event) =>
                       setCharacteristics((current) => ({ ...current, unit: event.target.value }))
                     }
+                    aria-label="Unidad de venta"
                     className="min-h-10 min-w-0 rounded-md border border-line bg-white px-2 text-sm"
                   >
-                    <option value="kg">kg</option>
-                    <option value="t">t</option>
-                    <option value="lb">lb</option>
+                    <option value="kg">Kilogramo (kg)</option>
+                    <option value="t">Tonelada (t)</option>
+                    <option value="lb">Libra (lb)</option>
                   </select>
                 </div>
               </div>
@@ -513,11 +560,12 @@ export function LotManagement({
               >
                 Ubicación
               </label>
-              <input
+              <textarea
                 id={`edit-origin-${record.id}`}
+                rows={2}
                 value={origin}
                 onChange={(event) => setOrigin(event.target.value)}
-                className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
+                className="min-h-10 min-w-0 resize-y rounded-md border border-line px-3 py-2 text-sm"
               />
             </div>
             <div className="grid min-w-0 gap-1.5 sm:col-span-2">
@@ -527,11 +575,12 @@ export function LotManagement({
               >
                 Organización responsable
               </label>
-              <input
+              <textarea
                 id={`edit-organization-${record.id}`}
+                rows={2}
                 value={organization}
                 onChange={(event) => setOrganization(event.target.value)}
-                className="min-h-10 min-w-0 rounded-md border border-line px-3 text-sm"
+                className="min-h-10 min-w-0 resize-y rounded-md border border-line px-3 py-2 text-sm"
               />
             </div>
             <div className="grid min-w-0 gap-1.5">

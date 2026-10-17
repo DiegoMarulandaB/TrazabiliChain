@@ -12,6 +12,7 @@ export type LotRecord = {
   organization: string;
   createdBy: string;
   createdByRole: DemoRole | null;
+  createdByOrganization?: string;
   isPublic: boolean;
   isDeleted?: boolean;
   photoDataUrl?: string;
@@ -246,6 +247,10 @@ function normalizeLotRecord(value: unknown): LotRecord | null {
     organization: value.organization as string,
     createdBy: typeof value.createdBy === "string" ? value.createdBy : "No registrado",
     createdByRole: isDemoRole(value.createdByRole) ? value.createdByRole : null,
+    createdByOrganization:
+      typeof value.createdByOrganization === "string"
+        ? value.createdByOrganization
+        : (value.organization as string),
     isPublic: typeof value.isPublic === "boolean" ? value.isPublic : false,
     isDeleted: typeof value.isDeleted === "boolean" ? value.isDeleted : false,
     ...(typeof value.photoDataUrl === "string" &&

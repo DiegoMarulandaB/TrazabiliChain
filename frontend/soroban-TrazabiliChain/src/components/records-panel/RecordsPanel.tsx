@@ -36,7 +36,15 @@ import {
   type DemoRole,
   type LotRecord,
 } from "@/lib/lots/lot-storage";
-import { formatLotCharacteristics } from "@/lib/lots/lot-characteristics";
+import {
+  formatLotCharacteristics,
+  getCurrencyDecimalSeparator,
+  getCurrencyLocale,
+  getCurrencySymbol,
+  formatLocalizedNumberInput,
+  formatNumberForCurrency,
+  parseLocalizedNumber,
+} from "@/lib/lots/lot-characteristics";
 
 gsap.registerPlugin(useGSAP);
 
@@ -91,6 +99,7 @@ export function RecordsPanel({
   const [presentation, setPresentation] = useState("");
   const [harvest, setHarvest] = useState("");
   const [quality, setQuality] = useState("");
+  const [quantity, setQuantity] = useState("1");
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState("COP");
   const [unit, setUnit] = useState("kg");
@@ -227,7 +236,14 @@ export function RecordsPanel({
     if (!presentation) errors["crop-presentation"] = "Selecciona la presentación del producto.";
     if (!harvest) errors["crop-harvest"] = "Selecciona el año de cosecha.";
     if (!quality) errors["crop-quality"] = "Selecciona la calidad del lote.";
-    if (price && (!Number.isFinite(Number(price)) || Number(price) <= 0)) {
+    if (!Number.isFinite(Number(quantity)) || Number(quantity) <= 0) {
+      errors["crop-quantity"] = "Ingresa una cantidad mayor que cero.";
+    }
+    if (
+      price &&
+      (!Number.isFinite(parseLocalizedNumber(price, currency)) ||
+        parseLocalizedNumber(price, currency) <= 0)
+    ) {
       errors["crop-price"] = "Ingresa un valor mayor que cero o deja el campo vacío.";
     }
     if (!form.origin.trim()) errors.origin = "Escribe el nombre de la finca.";
@@ -280,6 +296,7 @@ export function RecordsPanel({
         presentation,
         harvest,
         quality,
+        quantity,
         price,
         currency,
         unit,
@@ -298,6 +315,7 @@ export function RecordsPanel({
         organization: form.organization.trim(),
         createdBy: actorName.trim(),
         createdByRole: role,
+        createdByOrganization: activeOrganization.trim(),
         isPublic: form.isPublic,
         ...(photoDataUrl ? { photoDataUrl } : {}),
         id: window.crypto.randomUUID(),
@@ -324,6 +342,7 @@ export function RecordsPanel({
       setPresentation("");
       setHarvest("");
       setQuality("");
+      setQuantity("1");
       setPrice("");
       setOtherProductDetails("");
       setOriginCity("");
@@ -430,10 +449,11 @@ export function RecordsPanel({
           <label htmlFor="demo-actor" className="text-xs font-semibold text-ink">
             Actor declarado
           </label>
-          <input
+          <textarea
             id="demo-actor"
             required
             maxLength={100}
+            rows={2}
             value={actorName}
             aria-invalid={Boolean(fieldErrors["demo-actor"])}
             aria-describedby={fieldErrors["demo-actor"] ? "demo-actor-error" : undefined}
@@ -441,7 +461,7 @@ export function RecordsPanel({
               setActorName(event.target.value);
               clearFieldError("demo-actor");
             }}
-            className="min-h-10 rounded-md border border-line bg-white px-3 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent sm:text-sm"
+            className="min-h-10 w-full min-w-0 resize-y rounded-md border border-line bg-white px-3 py-2 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent sm:text-sm"
             placeholder="Nombre de quien registra"
           />
           <FormFieldError id="demo-actor-error" message={fieldErrors["demo-actor"]} />
@@ -450,10 +470,11 @@ export function RecordsPanel({
           <label htmlFor="demo-organization" className="text-xs font-semibold text-ink">
             Organización declarada
           </label>
-          <input
+          <textarea
             id="demo-organization"
             required
             maxLength={120}
+            rows={2}
             value={activeOrganization}
             aria-invalid={Boolean(fieldErrors["demo-organization"])}
             aria-describedby={
@@ -463,7 +484,7 @@ export function RecordsPanel({
               setActiveOrganization(event.target.value);
               clearFieldError("demo-organization");
             }}
-            className="min-h-10 rounded-md border border-line bg-white px-3 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent sm:text-sm"
+            className="min-h-10 w-full min-w-0 resize-y rounded-md border border-line bg-white px-3 py-2 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent sm:text-sm"
             placeholder="Nombre de la organización"
           />
           <FormFieldError id="demo-organization-error" message={fieldErrors["demo-organization"]} />
@@ -512,7 +533,7 @@ export function RecordsPanel({
                 <legend className="px-1 text-sm font-semibold text-ink">
                   Características del lote
                 </legend>
-                <div className="grid min-w-0 gap-1.5">
+                <div className="grid min-w-0 gap-1.5 sm:col-span-2">
                   <label htmlFor="crop-variety" className="text-xs font-semibold text-ink">
                     Variedad
                   </label>
@@ -538,7 +559,7 @@ export function RecordsPanel({
                   </select>
                   <FormFieldError id="crop-variety-error" message={fieldErrors["crop-variety"]} />
                 </div>
-                <div className="grid min-w-0 gap-1.5">
+                <div className="grid min-w-0 gap-1.5 sm:col-span-2">
                   <label htmlFor="crop-presentation" className="text-xs font-semibold text-ink">
                     Presentación
                   </label>
@@ -593,7 +614,7 @@ export function RecordsPanel({
                   </select>
                   <FormFieldError id="crop-harvest-error" message={fieldErrors["crop-harvest"]} />
                 </div>
-                <div className="grid min-w-0 gap-1.5">
+                <div className="grid min-w-0 gap-1.5 sm:col-span-2">
                   <label htmlFor="crop-quality" className="text-xs font-semibold text-ink">
                     Calidad declarada
                   </label>
@@ -618,30 +639,54 @@ export function RecordsPanel({
                   </select>
                   <FormFieldError id="crop-quality-error" message={fieldErrors["crop-quality"]} />
                 </div>
-                <div className="grid min-w-0 gap-1.5">
+                <div className="grid min-w-0 gap-1.5 sm:col-span-2">
                   <label htmlFor="crop-price" className="text-xs font-semibold text-ink">
                     Valor del producto (opcional)
                   </label>
-                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_6rem] gap-2">
+                  <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_6rem] gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="flex min-h-11 min-w-10 items-center justify-center rounded-md border border-line bg-paper px-2 text-sm font-semibold text-ink"
+                    >
+                      {getCurrencySymbol(currency)}
+                    </span>
                     <input
                       id="crop-price"
-                      type="number"
-                      min="0.01"
-                      step="any"
+                      type="text"
+                      inputMode="decimal"
+                      lang={getCurrencyLocale(currency)}
                       aria-invalid={Boolean(fieldErrors["crop-price"])}
-                      aria-describedby={fieldErrors["crop-price"] ? "crop-price-error" : undefined}
+                      aria-describedby={
+                        fieldErrors["crop-price"]
+                          ? "crop-price-hint crop-price-error"
+                          : "crop-price-hint"
+                      }
                       value={price}
                       onChange={(event) => {
                         setPrice(event.target.value);
                         clearFieldError("crop-price");
                       }}
+                      onBlur={() => {
+                        if (price.trim()) {
+                          setPrice(formatLocalizedNumberInput(price, currency));
+                        }
+                      }}
                       className="min-h-11 min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink"
-                      placeholder="Valor"
+                      placeholder={
+                        getCurrencyDecimalSeparator(currency) === "," ? "100.000,00" : "100,000.00"
+                      }
                     />
                     <select
                       aria-label="Divisa"
                       value={currency}
-                      onChange={(event) => setCurrency(event.target.value)}
+                      onChange={(event) => {
+                        const nextCurrency = event.target.value;
+                        const amount = parseLocalizedNumber(price, currency);
+                        setCurrency(nextCurrency);
+                        if (price.trim() && Number.isFinite(amount)) {
+                          setPrice(formatNumberForCurrency(amount, nextCurrency));
+                        }
+                      }}
                       className="min-h-11 min-w-0 rounded-md border border-line bg-white px-2 text-sm text-ink"
                     >
                       {currencies.map((item) => (
@@ -649,22 +694,49 @@ export function RecordsPanel({
                       ))}
                     </select>
                   </div>
+                  <p id="crop-price-hint" className="mb-0 text-xs text-gray-700">
+                    Usa {getCurrencyDecimalSeparator(currency)} como separador decimal para{" "}
+                    {currency}.
+                  </p>
                   <FormFieldError id="crop-price-error" message={fieldErrors["crop-price"]} />
                 </div>
-                <div className="grid min-w-0 gap-1.5">
-                  <label htmlFor="crop-unit" className="text-xs font-semibold text-ink">
-                    Unidad de venta
+                <div className="grid min-w-0 gap-1.5 sm:col-span-2">
+                  <label htmlFor="crop-quantity" className="text-xs font-semibold text-ink">
+                    Cantidad
                   </label>
-                  <select
-                    id="crop-unit"
-                    value={unit}
-                    onChange={(event) => setUnit(event.target.value)}
-                    className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink"
-                  >
-                    <option value="kg">Kilogramo (kg)</option>
-                    <option value="t">Tonelada (t)</option>
-                    <option value="lb">Libra (lb)</option>
-                  </select>
+                  <div className="grid w-full max-w-sm min-w-0 grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-2">
+                    <input
+                      id="crop-quantity"
+                      type="number"
+                      min="0.001"
+                      step="any"
+                      inputMode="decimal"
+                      lang={getCurrencyLocale(currency)}
+                      required
+                      aria-invalid={Boolean(fieldErrors["crop-quantity"])}
+                      aria-describedby={
+                        fieldErrors["crop-quantity"] ? "crop-quantity-error" : undefined
+                      }
+                      value={quantity}
+                      onChange={(event) => {
+                        setQuantity(event.target.value);
+                        clearFieldError("crop-quantity");
+                      }}
+                      className="min-h-11 min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink"
+                    />
+                    <select
+                      id="crop-unit"
+                      aria-label="Unidad de venta"
+                      value={unit}
+                      onChange={(event) => setUnit(event.target.value)}
+                      className="min-h-11 min-w-0 rounded-md border border-line bg-white px-2 text-sm text-ink"
+                    >
+                      <option value="kg">Kilogramo (kg)</option>
+                      <option value="t">Tonelada (t)</option>
+                      <option value="lb">Libra (lb)</option>
+                    </select>
+                  </div>
+                  <FormFieldError id="crop-quantity-error" message={fieldErrors["crop-quantity"]} />
                 </div>
                 <div className="grid min-w-0 gap-1.5 sm:col-span-2">
                   <label htmlFor="other-product-details" className="text-xs font-semibold text-ink">
@@ -741,16 +813,17 @@ export function RecordsPanel({
                   <label htmlFor="origin" className="text-xs font-semibold text-ink">
                     Finca o lugar de origen
                   </label>
-                  <input
+                  <textarea
                     id="origin"
                     name="origin"
                     required
                     maxLength={100}
+                    rows={2}
                     value={form.origin}
                     aria-invalid={Boolean(fieldErrors.origin)}
                     aria-describedby={fieldErrors.origin ? "origin-error" : undefined}
                     onChange={(event) => updateField("origin", event.target.value)}
-                    className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base text-ink sm:text-sm"
+                    className="min-h-11 w-full min-w-0 resize-y rounded-md border border-line bg-white px-3 py-2 text-base text-ink sm:text-sm"
                     placeholder="Nombre de la finca"
                   />
                   <FormFieldError id="origin-error" message={fieldErrors.origin} />
@@ -787,10 +860,11 @@ export function RecordsPanel({
                       <option value="__manual__">Ingresar otra ciudad</option>
                     </select>
                   ) : (
-                    <input
+                    <textarea
                       id="origin-city"
                       required
                       maxLength={100}
+                      rows={2}
                       aria-invalid={Boolean(fieldErrors["origin-city"])}
                       aria-describedby={
                         fieldErrors["origin-city"] ? "origin-city-error" : undefined
@@ -800,7 +874,7 @@ export function RecordsPanel({
                         setOriginCity(event.target.value);
                         clearFieldError("origin-city");
                       }}
-                      className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink"
+                      className="min-h-11 w-full min-w-0 resize-y rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
                       placeholder="Ingresa cualquier ciudad"
                     />
                   )}
@@ -863,10 +937,11 @@ export function RecordsPanel({
                       <option value="__manual__">Ingresar otra región</option>
                     </select>
                   ) : (
-                    <input
+                    <textarea
                       id="origin-department"
                       required
                       maxLength={100}
+                      rows={2}
                       aria-invalid={Boolean(fieldErrors["origin-department"])}
                       aria-describedby={
                         fieldErrors["origin-department"] ? "origin-department-error" : undefined
@@ -876,7 +951,7 @@ export function RecordsPanel({
                         setOriginDepartment(event.target.value);
                         clearFieldError("origin-department");
                       }}
-                      className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink"
+                      className="min-h-11 w-full min-w-0 resize-y rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
                       placeholder="Ingresa cualquier región"
                     />
                   )}
@@ -953,17 +1028,18 @@ export function RecordsPanel({
                 <label htmlFor="organization" className="text-sm font-semibold text-ink">
                   Organización responsable
                 </label>
-                <input
+                <textarea
                   id="organization"
                   name="organization"
                   autoComplete="organization"
                   required
                   maxLength={100}
+                  rows={2}
                   value={form.organization}
                   aria-invalid={Boolean(fieldErrors.organization)}
                   aria-describedby={fieldErrors.organization ? "organization-error" : undefined}
                   onChange={(event) => updateField("organization", event.target.value)}
-                  className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent focus-visible:border-accent focus-visible:outline-accent sm:text-sm"
+                  className="min-h-11 w-full min-w-0 resize-y rounded-md border border-line bg-white px-3 py-2 text-base text-ink placeholder:text-gray-700 focus:placeholder:text-transparent focus-visible:border-accent focus-visible:outline-accent sm:text-sm"
                   placeholder="Nombre de la organización"
                 />
                 <FormFieldError id="organization-error" message={fieldErrors.organization} />
@@ -1167,6 +1243,19 @@ export function RecordsPanel({
                       <div>
                         <dt className="text-xs text-gray-700">Organización responsable</dt>
                         <dd className="mt-1 mb-0 text-ink">{record.organization}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-gray-700">Actor declarado</dt>
+                        <dd className="mt-1 mb-0 text-ink">
+                          {record.createdBy}
+                          {record.createdByRole && ` · ${roleLabels[record.createdByRole]}`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs text-gray-700">Organización declarada</dt>
+                        <dd className="mt-1 mb-0 text-ink">
+                          {record.createdByOrganization || record.organization}
+                        </dd>
                       </div>
                       <div className="sm:col-span-2">
                         <dt className="text-xs text-gray-700">Creado</dt>
