@@ -45,7 +45,9 @@ async function simulateSignAndSubmit<T>(
   const simulation = invocation.simulation;
   if (!simulation || rpc.Api.isSimulationError(simulation)) {
     throw new Error(
-      explainSorobanError(simulation?.error ?? "Stellar no devolvió el resultado de la simulación."),
+      explainSorobanError(
+        simulation?.error ?? "Stellar no devolvió el resultado de la simulación.",
+      ),
     );
   }
 
