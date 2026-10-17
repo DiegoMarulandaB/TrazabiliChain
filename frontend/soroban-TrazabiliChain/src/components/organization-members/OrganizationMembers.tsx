@@ -21,16 +21,23 @@ export const roleLabels: Record<DemoRole, string> = {
   consumer: "Consumidor",
 };
 
+function normalizeOrganization(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("es");
+}
+
 export function OrganizationMembers({
   organization: activeOrganization,
 }: {
   organization: string;
 }) {
   const allMembers = useOrganizationMembers();
-  const members = allMembers.filter((member) => member.organization === activeOrganization.trim());
+  const members = allMembers.filter(
+    (member) =>
+      normalizeOrganization(member.organization) === normalizeOrganization(activeOrganization),
+  );
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [organization, setOrganization] = useState("");
+  const [organization, setOrganization] = useState(activeOrganization);
   const [role, setRole] = useState<DemoRole>("producer");
   const [message, setMessage] = useState("");
 
@@ -108,8 +115,12 @@ export function OrganizationMembers({
             maxLength={120}
             value={organization}
             onChange={(event) => setOrganization(event.target.value)}
+            aria-describedby="member-organization-help"
             className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink"
           />
+          <p id="member-organization-help" className="mb-0 text-xs leading-5 text-gray-700">
+            Se completa con la organización declarada en el perfil. La tabla muestra sus miembros.
+          </p>
         </div>
         <div className="grid min-w-0 gap-1.5">
           <label htmlFor="member-role" className="text-sm font-semibold text-ink">
@@ -159,11 +170,11 @@ export function OrganizationMembers({
             <dl className="grid min-w-0 gap-3 text-sm">
               <div className="min-w-0">
                 <dt className="text-xs font-semibold text-gray-700">Miembro</dt>
-                <dd className="mb-0 break-words text-ink">{member.name}</dd>
+                <dd className="mb-0 wrap-break-word text-ink">{member.name}</dd>
               </div>
               <div className="min-w-0">
                 <dt className="text-xs font-semibold text-gray-700">Organización</dt>
-                <dd className="mb-0 break-words text-ink">{member.organization}</dd>
+                <dd className="mb-0 wrap-break-word text-ink">{member.organization}</dd>
               </div>
               <div>
                 <dt className="text-xs font-semibold text-gray-700">Perfil asignado</dt>
@@ -214,7 +225,7 @@ export function OrganizationMembers({
                 Organización
               </th>
               <th scope="col" className="px-4 py-3 font-semibold">
-                Rol
+                Perfil de trabajo
               </th>
               <th scope="col" className="px-4 py-3 font-semibold">
                 Editar
@@ -259,7 +270,7 @@ export function OrganizationMembers({
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-700">
                   {activeOrganization.trim()
-                    ? "Todavía no hay miembros para esta organización."
+                    ? `Todavía no hay miembros guardados para ${activeOrganization.trim()}. Completa el formulario y pulsa Agregar miembro.`
                     : "Indica la organización del perfil de trabajo para gestionar sus miembros."}
                 </td>
               </tr>

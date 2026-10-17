@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
+import { StellarWalletProvider } from "@/components/providers/StellarWalletProvider";
 import { RecordsPanel } from "@/components/records-panel/RecordsPanel";
 import {
   demoRoles,
@@ -26,6 +27,7 @@ type AccessStage =
 type AuthMode = "signIn" | "signUp";
 const productOptions = ["Café orgánico", "Cacao orgánico", "Algodón orgánico"];
 const workflowRoleEventName = "trazabilichain:workflow-role-change";
+const rolesWithAccountLotHistory: DemoRole[] = ["producer", "organizationAdmin"];
 const roleDescriptions: Record<DemoRole, string> = {
   producer: "Registra lotes y su origen; después puede publicar un QR y anclar una huella.",
   supplyActor: "Añade al historial los traslados y otras etapas de la cadena.",
@@ -50,6 +52,7 @@ export function RecordsAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | "info">("error");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -124,22 +127,31 @@ export function RecordsAuth() {
         session = null;
       }
       if (isMounted) {
+        setAuthUserId(session && !session.user.is_anonymous ? session.user.id : null);
         setStage(session ? "workflowPreferences" : "credentials");
       }
     });
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
+        setAuthUserId(session && !session.user.is_anonymous ? session.user.id : null);
         setStage("resetPassword");
         return;
       }
       if (event === "INITIAL_SESSION") {
-        setStage(session && !session.user.is_anonymous ? "workflowPreferences" : "credentials");
+        const accountSession = session && !session.user.is_anonymous;
+        setAuthUserId(accountSession ? session.user.id : null);
+        setStage(accountSession ? "workflowPreferences" : "credentials");
         return;
       }
       const accountSession = session && !session.user.is_anonymous;
+      setAuthUserId(accountSession ? session.user.id : null);
       setStage(
-        accountSession ? (workflowRole === "producer" ? "dashboard" : "lotLookup") : "credentials",
+        accountSession
+          ? rolesWithAccountLotHistory.includes(workflowRole)
+            ? "dashboard"
+            : "lotLookup"
+          : "credentials",
       );
       if (event === "SIGNED_IN" && accountSession) {
         toast.success("Acceso confirmado.");
@@ -154,7 +166,7 @@ export function RecordsAuth() {
 
   function continueAfterAuthentication() {
     void saveProductNotificationPreference(selectedProduct);
-    setStage(workflowRole === "producer" ? "dashboard" : "lotLookup");
+    setStage(rolesWithAccountLotHistory.includes(workflowRole) ? "dashboard" : "lotLookup");
   }
 
   function selectWorkflowRole(value: string) {
@@ -184,6 +196,7 @@ export function RecordsAuth() {
         if (error) {
           notify("No se pudo crear la cuenta. Revisa los datos e inténtalo de nuevo.");
         } else if (data.session) {
+          setAuthUserId(data.session.user.id);
           continueAfterAuthentication();
           toast.success("Cuenta creada. Ya puedes usar el dashboard.");
         } else {
@@ -192,13 +205,14 @@ export function RecordsAuth() {
           );
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: email.trim().toLowerCase(),
           password,
         });
         if (error) {
           notify("No se pudo iniciar sesión. Revisa el correo y la contraseña.");
         } else {
+          setAuthUserId(data.user.id);
           continueAfterAuthentication();
         }
       }
@@ -283,6 +297,7 @@ export function RecordsAuth() {
         notify("No se pudo cerrar la sesión. Inténtalo de nuevo.");
         return;
       }
+      setAuthUserId(null);
       setStage("credentials");
       setPassword("");
       setCandidates([]);
@@ -360,26 +375,30 @@ export function RecordsAuth() {
 
   if (stage === "dashboard") {
     return (
-      <>
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
-          <div>
-            <p className="mb-1 text-[11px] font-bold text-accent">ÁREA DE TRABAJO</p>
-            <p className="mb-0 text-sm text-gray-700">Sesión autenticada con Supabase</p>
+      <StellarWalletProvider key={authUserId ?? "authenticated-session"}>
+        <>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+            <div>
+              <p className="mb-1 text-[11px] font-bold text-accent">ÁREA DE TRABAJO</p>
+              <p className="mb-0 text-sm text-gray-700">Sesión autenticada con Supabase</p>
+            </div>
+            <button
+              type="button"
+              onClick={signOut}
+              className="min-h-10 rounded-md border border-line px-3 text-sm font-semibold text-ink transition-colors hover:bg-white focus-visible:outline-offset-2"
+            >
+              Cerrar sesión
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={signOut}
-            className="min-h-10 rounded-md border border-line px-3 text-sm font-semibold text-ink transition-colors hover:bg-white focus-visible:outline-offset-2"
-          >
-            Cerrar sesión
-          </button>
-        </div>
-        <RecordsPanel
-          initialRole={workflowRole}
-          initialProduct={selectedProduct}
-          selectedLotId={workflowRole === "producer" ? undefined : selectedLotId}
-        />
-      </>
+          <RecordsPanel
+            initialRole={workflowRole}
+            initialProduct={selectedProduct}
+            selectedLotId={
+              rolesWithAccountLotHistory.includes(workflowRole) ? undefined : selectedLotId
+            }
+          />
+        </>
+      </StellarWalletProvider>
     );
   }
 

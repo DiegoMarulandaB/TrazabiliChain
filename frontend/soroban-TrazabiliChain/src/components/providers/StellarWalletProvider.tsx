@@ -70,6 +70,7 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
+      void kitRef.current?.disconnect();
     };
   }, []);
 

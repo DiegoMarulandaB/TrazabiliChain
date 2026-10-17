@@ -53,7 +53,10 @@ export function ConfirmDialog({
     >
       <div className="p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
-          <h2 id={titleId} className="mb-0 font-display text-xl font-medium">
+          <h2
+            id={titleId}
+            className="mb-0 min-w-0 break-words font-display text-xl font-medium [overflow-wrap:anywhere]"
+          >
             {title}
           </h2>
           <button
@@ -68,7 +71,7 @@ export function ConfirmDialog({
         </div>
         <p
           id={descriptionId}
-          className="mt-3 mb-0 whitespace-pre-line text-sm leading-6 text-gray-700"
+          className="mt-3 mb-0 break-words whitespace-pre-line text-sm leading-6 text-gray-700 [overflow-wrap:anywhere]"
         >
           {description}
         </p>

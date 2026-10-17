@@ -368,6 +368,31 @@ export function RecordsPanel({
     }
   }
 
+  if (isLoadingRecords || storageError) {
+    return (
+      <section
+        ref={panelRef}
+        id="registro"
+        aria-labelledby="page-title"
+        className="scroll-mt-8 py-8"
+      >
+        <h1 id="page-title" className="font-display text-2xl font-medium text-ink">
+          {isLoadingRecords ? "Cargando tus lotes…" : "No se pudieron cargar tus lotes"}
+        </h1>
+        <p
+          className={`mt-2 mb-0 text-sm leading-6 ${storageError ? "text-red-800" : "text-gray-700"}`}
+          role={storageError ? "alert" : "status"}
+          aria-live={storageError ? "assertive" : "polite"}
+        >
+          {storageError
+            ? storageMessage ||
+              "Verifica la conexión y los permisos de tu cuenta e inténtalo de nuevo."
+            : "Consultando los registros permitidos para tu cuenta."}
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section ref={panelRef} id="registro" aria-labelledby="page-title" className="scroll-mt-8">
       <div
@@ -437,6 +462,13 @@ export function RecordsPanel({
             El rol cambia las vistas disponibles en esta demostración; no representa permisos de
             organización.
           </p>
+          {role === "organizationAdmin" && (
+            <p className="mt-2 mb-0 text-xs leading-5 text-gray-700" role="note">
+              El historial muestra solo los lotes accesibles para esta cuenta de Supabase. En cada
+              lote puedes consultar el último hash guardado en Stellar Testnet; cambiar de perfil no
+              concede acceso a registros de otras cuentas.
+            </p>
+          )}
         </div>
         <div className="grid gap-1.5">
           <span className="text-xs font-semibold text-ink">Perfil seleccionado</span>
@@ -1140,7 +1172,7 @@ export function RecordsPanel({
         )}
         {role === "organizationAdmin" && (
           <section data-enter data-tour-work className="lg:col-span-2">
-            <OrganizationMembers organization={activeOrganization} />
+            <OrganizationMembers key={activeOrganization} organization={activeOrganization} />
             <TraceabilityActorAccess />
           </section>
         )}

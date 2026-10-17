@@ -4,14 +4,37 @@ import { useLotAnchor } from "@/hooks/useLotAnchor";
 import type { LotRecord } from "@/lib/lots/lot-storage";
 
 export function TraceabilityAnchor({ record }: { record: LotRecord }) {
-  const { anchor, isAnchoring, result } = useLotAnchor(record);
+  const { anchor, anchorStatus, checkAnchor, isAnchoring, isCheckingAnchor, result } =
+    useLotAnchor(record);
 
   return (
     <div className="mt-4 grid justify-items-start gap-2 border-t border-line pt-4">
       <button
         type="button"
+        onClick={() => void checkAnchor()}
+        disabled={isCheckingAnchor}
+        className="inline-flex min-h-10 items-center justify-center rounded-md border border-line px-3 text-sm font-semibold text-ink transition-colors hover:bg-paper disabled:cursor-wait disabled:opacity-60"
+      >
+        {isCheckingAnchor ? "Consultando Stellar…" : "Consultar estado en Testnet"}
+      </button>
+      {anchorStatus?.record === record && (
+        <div
+          className="grid gap-1 text-xs leading-5"
+          role={anchorStatus.isError ? "alert" : "status"}
+          aria-live={anchorStatus.isError ? "assertive" : "polite"}
+        >
+          <p className="mb-0 text-gray-700">{anchorStatus.message}</p>
+          {anchorStatus.latestHash && (
+            <p className="mb-0 break-all font-mono text-gray-700">
+              Última huella: {anchorStatus.latestHash}
+            </p>
+          )}
+        </div>
+      )}
+      <button
+        type="button"
         onClick={() => void anchor()}
-        disabled={isAnchoring}
+        disabled={isAnchoring || isCheckingAnchor}
         className="inline-flex min-h-10 items-center justify-center rounded-md border border-accent px-3 text-sm font-semibold text-accent transition-colors hover:bg-accent-soft disabled:cursor-wait disabled:opacity-60"
       >
         {isAnchoring ? "Registrando en Stellar…" : "Anclar huella del lote"}

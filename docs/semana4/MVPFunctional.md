@@ -16,7 +16,7 @@ El historial del Productor muestra métricas distintas de lotes activos y retira
 
 En la demo, una cuenta de correo/contraseña puede elegir cualquiera de los perfiles disponibles. El selector cambia la interfaz, pero no concede permisos; Supabase RLS limita los lotes privados al `auth.uid()` de la cuenta. Para producción se requiere una identidad y un rol verificado por perfil, credenciales no compartidas entre perfiles y políticas RLS por organización. Esa autenticación independiente todavía no está implementada.
 
-Las ediciones de demo se limitan a registros propios: Productor gestiona lotes; Actor de cadena, sus eventos; Certificador, sus certificados; Administrador, miembros del directorio local de la organización declarada; Auditor, sus notas privadas, no los datos fuente. Comprador solo cambia el borrador de escrow antes de la firma; un contrato desplegado no se edita desde el formulario. El directorio local y la selección de rol no son controles de autorización.
+Las ediciones de demo se limitan a registros propios: Productor gestiona lotes; Actor de cadena, sus eventos; Certificador, sus certificados; Administrador gestiona miembros del directorio local y revisa los lotes de la misma cuenta Supabase, incluyendo una consulta de solo lectura del último hash de Stellar Testnet; Auditor gestiona sus notas privadas, no los datos fuente. El Administrador no recibe acceso a lotes de otras cuentas aunque declaren la misma organización. Comprador solo cambia el borrador de escrow antes de la firma; un contrato desplegado no se edita desde el formulario. El directorio local y la selección de rol no son controles de autorización.
 
 La migración `202610160001_public_lot_prefix_lookup.sql` ya está aplicada. Consumidor busca solo fichas publicadas por producto; los perfiles internos consultan lotes propios bajo RLS.
 
@@ -32,6 +32,7 @@ La migración `202610160001_public_lot_prefix_lookup.sql` ya está aplicada. Con
 - Verificar que los lotes retirados no se cuentan como activos y que solo el perfil Productor ve su sección plegable de retirados.
 - Cambiar el cultivo de interés y comprobar que la campana muestra solo avisos de ese cultivo y permanece oculta en Productor.
 - Probar que el selector de perfil no concede autorización y que RLS impide ver lotes de otro propietario.
+- Como Administrador, comprobar que aparecen todos y solo los lotes de la cuenta Supabase activa; consultar su contador y última huella en Testnet sin conectar wallet y contrastar si el hash coincide con la ficha actual.
 - Revisar el formulario en móvil/tablet: sin desbordamiento horizontal, valores de fecha visibles, etiquetas legibles y lector de pantalla.
 - Abrir el directorio del Administrador en ancho móvil y comprobar que las tarjetas permiten leer y operar sobre cada miembro sin scroll horizontal.
 - Escanear un QR con el logo central en varios tamaños y confirmar que sigue abriendo la misma ficha pública del lote.
