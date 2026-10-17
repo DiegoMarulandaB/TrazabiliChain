@@ -1,4 +1,4 @@
-import { Networks, TransactionBuilder, rpc } from "@stellar/stellar-sdk";
+import { Address, Networks, TransactionBuilder, rpc } from "@stellar/stellar-sdk";
 import type { AssembledTransaction } from "@stellar/stellar-sdk/contract";
 import { Buffer } from "buffer";
 import { Client as TraceabilityRegistryClient } from "@trazabilichain/traceability-registry";
@@ -131,6 +131,35 @@ export async function setTraceabilityActorAuthorization(
 ) {
   if (!contractId) {
     throw new Error("Configura NEXT_PUBLIC_TRACEABILITY_CONTRACT_ID con el contrato desplegado.");
+  }
+
+  const server = new rpc.Server(testnetRpcUrl);
+  let contractAdmin: string;
+  try {
+    const instance = await server.getContractInstance(contractId);
+    const adminEntry = instance.storage()?.find((entry) => {
+      const keyParts = entry.key().vec();
+      return keyParts?.[0]?.sym()?.toString() === "Admin";
+    });
+    const adminValue = adminEntry?.val().address();
+    if (!adminValue) {
+      throw new Error("El contrato no contiene una dirección administradora.");
+    }
+    contractAdmin = Address.fromScAddress(adminValue).toString();
+  } catch {
+    throw new Error("No se pudo leer la wallet administradora del contrato en Testnet.");
+  }
+
+  if (adminAddress !== contractAdmin) {
+    throw new Error(
+      `La wallet conectada (${adminAddress}) no es la administradora de este contrato. Conecta ${contractAdmin} en Freighter. El campo “Wallet Stellar del actor” es para la dirección que quieres autorizar, no para la administradora.`,
+    );
+  }
+
+  if (actorAddress === contractAdmin) {
+    throw new Error(
+      "La dirección del campo de actor coincide con la administradora. Ingresa la wallet del actor que quieres autorizar.",
+    );
   }
 
   const client = new TraceabilityRegistryClient({

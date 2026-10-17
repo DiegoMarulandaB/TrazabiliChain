@@ -61,16 +61,22 @@ export function TraceabilityActorAccess() {
         Acceso de escritura al contrato
       </h3>
       <p className="mb-4 max-w-2xl text-sm leading-6 text-gray-700">
-        Solo la wallet administradora configurada en `__constructor` puede autorizar o revocar
-        actores. Cada cambio se simula, muestra su tarifa y requiere firma en la wallet.
+        La wallet conectada en Freighter debe ser la administradora configurada en `__constructor`.
+        En el campo siguiente escribe la dirección del actor que quieres autorizar o revocar, no la
+        dirección administradora. El contrato verificará el permiso antes de solicitar una firma.
       </p>
+      {address && (
+        <p className="mb-4 break-all font-mono text-xs text-gray-700" role="status">
+          Wallet conectada: {address}
+        </p>
+      )}
       <form
         className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]"
         onSubmit={authorizeActor}
       >
         <div className="grid gap-1.5">
           <label htmlFor="traceability-actor-address" className="text-sm font-semibold text-ink">
-            Wallet Stellar del actor
+            Dirección del actor que quieres autorizar o revocar
           </label>
           <input
             id="traceability-actor-address"
@@ -79,9 +85,14 @@ export function TraceabilityActorAccess() {
             spellCheck={false}
             value={actorAddress}
             onChange={(event) => setActorAddress(event.target.value.trim())}
+            aria-describedby="traceability-actor-address-help"
             className="min-h-11 rounded-md border border-line bg-white px-3 font-mono text-xs text-ink"
             placeholder="G…"
           />
+          <p id="traceability-actor-address-help" className="mb-0 text-xs leading-5 text-gray-700">
+            Si quieres autorizar tu wallet de trabajo, conecta primero la wallet administradora y
+            escribe aquí la dirección pública de esa wallet de trabajo.
+          </p>
         </div>
         <button
           type="submit"
