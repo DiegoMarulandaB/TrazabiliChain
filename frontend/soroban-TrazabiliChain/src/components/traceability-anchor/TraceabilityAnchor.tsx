@@ -23,7 +23,7 @@ export function TraceabilityAnchor({
         type="button"
         onClick={() => void checkAnchor()}
         disabled={isCheckingAnchor}
-        className="inline-flex min-h-10 items-center justify-center rounded-md border border-line px-3 text-sm font-semibold text-ink transition-colors hover:bg-paper disabled:cursor-wait disabled:opacity-60"
+        className="inline-flex min-h-11 items-center justify-center rounded-md border border-line px-3 text-sm font-semibold text-ink transition-colors hover:bg-paper disabled:cursor-wait disabled:opacity-60"
       >
         {isCheckingAnchor ? "Consultando Stellar…" : "Consultar estado en Testnet"}
       </button>
@@ -47,7 +47,7 @@ export function TraceabilityAnchor({
             type="button"
             onClick={() => void anchor()}
             disabled={isAnchoring || isCheckingAnchor}
-            className="inline-flex min-h-10 items-center justify-center rounded-md border border-accent px-3 text-sm font-semibold text-accent transition-colors hover:bg-accent-soft disabled:cursor-wait disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center rounded-md border border-accent px-3 text-sm font-semibold text-accent transition-colors hover:bg-accent-soft disabled:cursor-wait disabled:opacity-60"
           >
             {isAnchoring ? "Registrando en Stellar…" : "Anclar huella del lote"}
           </button>

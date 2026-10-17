@@ -649,7 +649,7 @@ export function LotManagement({
                 type="button"
                 disabled={isBusy}
                 onClick={() => requestAction("edited")}
-                className="min-h-10 rounded-md bg-accent px-3 text-sm font-semibold text-white hover:bg-[#125746] disabled:opacity-50"
+                className="min-h-11 rounded-md bg-accent px-3 text-sm font-semibold text-white hover:bg-[#125746] disabled:opacity-50"
               >
                 Guardar cambios
               </button>
@@ -657,7 +657,7 @@ export function LotManagement({
                 type="button"
                 disabled={isBusy}
                 onClick={() => requestAction("deleted")}
-                className="min-h-10 rounded-md border border-red-700 px-3 text-sm font-semibold text-red-800 hover:bg-red-50 disabled:opacity-50"
+                className="min-h-11 rounded-md border border-red-700 px-3 text-sm font-semibold text-red-800 hover:bg-red-50 disabled:opacity-50"
               >
                 Retirar lote
               </button>

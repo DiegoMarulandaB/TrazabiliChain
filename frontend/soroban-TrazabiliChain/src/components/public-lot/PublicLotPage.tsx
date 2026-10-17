@@ -143,67 +143,6 @@ export function PublicLotPage({ id }: { id: string }) {
           </section>
           <section
             className="mt-7 border-t border-line pt-5"
-            aria-labelledby="public-certificates-title"
-          >
-            <h2
-              id="public-certificates-title"
-              className="font-display text-xl font-medium text-ink"
-            >
-              Certificados y evidencias
-            </h2>
-            {record.certificates.length > 0 ? (
-              <ul className="mt-4 grid gap-4">
-                {record.certificates.map((certificate) => (
-                  <li key={certificate.id} className="rounded-md border border-line p-4">
-                    <h3 className="mb-2 text-sm font-semibold text-ink">{certificate.name}</h3>
-                    <dl className="grid gap-3 text-sm sm:grid-cols-2">
-                      <div>
-                        <dt className="text-xs text-gray-700">Emisor declarado</dt>
-                        <dd className="mt-1 mb-0 text-ink">{certificate.issuer}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs text-gray-700">Número</dt>
-                        <dd className="mt-1 mb-0 text-ink">{certificate.certificateNumber}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-xs text-gray-700">Vigencia declarada</dt>
-                        <dd className="mt-1 mb-0 text-ink">
-                          {certificate.validUntil
-                            ? formatDate(certificate.validUntil)
-                            : "Sin fecha de vencimiento indicada"}
-                        </dd>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <dt className="text-xs text-gray-700">Huella SHA-256 del archivo</dt>
-                        <dd className="mt-1 mb-0 break-all font-mono text-xs text-ink">
-                          {certificate.evidenceSha256}
-                        </dd>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <dt className="text-xs text-gray-700">Asociado por</dt>
-                        <dd className="mt-1 mb-0 text-sm text-ink">
-                          {certificate.recordedByRole
-                            ? roleLabels[certificate.recordedByRole]
-                            : "certificador declarado"}{" "}
-                          · {certificate.recordedByOrganization}
-                        </dd>
-                      </div>
-                    </dl>
-                    <p className="mt-3 mb-0 text-xs leading-5 text-gray-700">
-                      Documento y emisor declarados por el usuario; no han sido verificados por la
-                      plataforma.
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 mb-0 text-sm text-gray-700">
-                No se han asociado certificados a este lote.
-              </p>
-            )}
-          </section>
-          <section
-            className="mt-7 border-t border-line pt-5"
             aria-label="Código QR y opciones para compartir"
           >
             <LotSharing record={record} />

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SplashScreen } from "@/components/splash-screen/SplashScreen";
 import { Toaster } from "@/components/ui/feedback/Toaster";
 import "./globals.css";
 import "driver.js/dist/driver.css";
@@ -67,7 +66,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="es" data-scroll-behavior="smooth">
       <body className="font-sans antialiased">
         <Toaster />
-        <SplashScreen>{children}</SplashScreen>
+        {children}
       </body>
     </html>
   );

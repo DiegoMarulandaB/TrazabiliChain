@@ -12,7 +12,7 @@ El productor elige café, cacao o algodón orgánicos y registra atributos, ubic
 
 Los formularios de texto guardan borradores en Supabase privados por cuenta, perfil y producto, para continuar en otro navegador con la misma sesión. Los archivos de evidencia/fotos y la conexión Freighter no se sincronizan; deben volver a seleccionarse o conectarse en el otro navegador. La selección de lote se restaura como prefijo y se vuelve a consultar bajo RLS. Este flujo requiere `202610170001_traceability_work_drafts.sql`.
 
-El historial del Productor muestra métricas distintas de lotes activos y retirados; los retirados aparecen en una sección plegable y no incrementan el conteo activo. La campana se oculta en este perfil. Los otros perfiles reciben notificaciones privadas del cultivo elegido solo cuando se publica un lote del mismo cultivo. Para activar avisos deben aplicarse `202610160003_product_notifications.sql` y `202610160004_cleanup_product_notifications.sql`.
+El historial del Productor muestra métricas distintas de lotes activos y retirados; los retirados aparecen en una sección plegable y no incrementan el conteo activo. Productor recibe avisos de anclaje en la campana del header; la campana de suscripciones por cultivo se oculta en este perfil. Los demás perfiles reciben notificaciones privadas del cultivo elegido cuando se publica un lote del mismo cultivo. Para esos avisos deben aplicarse `202610160003_product_notifications.sql` y `202610160004_cleanup_product_notifications.sql`.
 
 La escritura del hash se limita al Productor, al Administrador y a un Actor de cadena o Certificador que haya contribuido al lote; todos siguen sujetos a la autorización de su wallet en Soroban. Comprador, Auditor y Consumidor conservan consulta de solo lectura. Después de que el Administrador del contrato confirma un anclaje, el dueño Supabase del lote recibe un aviso privado, visible solo en Productor, con el enlace a la transacción Testnet. El aviso no sustituye la verificación del hash ni concede acceso al lote. Requiere aplicar `202610170002_lot_anchor_notifications.sql`.
 
@@ -34,7 +34,7 @@ La migración `202610160001_public_lot_prefix_lookup.sql` ya está aplicada. Con
 - Publicar un lote con foto y comprobar que la imagen no aparece en su ficha QR pública.
 - Confirmar que una contraseña incorrecta no altera el lote; comprobar que editar registra motivo y que retirar despublica el QR sin borrar el historial.
 - Verificar que los lotes retirados no se cuentan como activos y que solo el perfil Productor ve su sección plegable de retirados.
-- Cambiar el cultivo de interés y comprobar que la campana muestra solo avisos de ese cultivo y permanece oculta en Productor.
+- Cambiar el cultivo de interés y comprobar que esa campana muestra solo avisos de publicación; en Productor, verificar la campana de anclajes del header.
 - Probar que el selector de perfil no concede autorización y que RLS impide ver lotes de otro propietario.
 - Como Administrador, comprobar que aparecen todos y solo los lotes de la cuenta Supabase activa; consultar su contador y última huella en Testnet sin conectar wallet y contrastar si el hash coincide con la ficha actual.
 - Aplicar `202610170001_traceability_work_drafts.sql`; iniciar un draft con una cuenta, abrir la misma cuenta en otro navegador y comprobar que se restaura sin mostrar drafts de otro usuario. Confirmar que archivos y wallet no se copian.

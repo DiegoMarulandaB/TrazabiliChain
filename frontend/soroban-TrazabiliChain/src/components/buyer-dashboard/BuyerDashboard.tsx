@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
 import { LotCharacteristics } from "@/components/lot-characteristics/LotCharacteristics";
 import { LotJourney } from "@/components/lot-journey/LotJourney";
 import { useWorkDraft } from "@/hooks/useWorkDraft";
@@ -26,28 +25,28 @@ export function BuyerDashboard({
     payload: { query, declaredValidOnly },
     onRestore: (draft) => {
       if (draft.query !== undefined) setQuery(draft.query);
-      if (draft.declaredValidOnly !== undefined) {
-        setDeclaredValidOnly(draft.declaredValidOnly);
-      }
+      if (draft.declaredValidOnly !== undefined) setDeclaredValidOnly(draft.declaredValidOnly);
     },
   });
   const today = new Date().toISOString().slice(0, 10);
   const filteredRecords = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("es");
-    const matchesLotPrefix = /^[0-9a-f]{8}[0-9a-f-]{0,28}$/.test(normalizedQuery);
+    const looksLikeLotPrefix = /^[0-9a-f]{8}[0-9a-f-]{0,28}$/.test(normalizedQuery);
     return records.filter((record) => {
-      const matchesText =
-        !normalizedQuery ||
-        (matchesLotPrefix && record.id.toLocaleLowerCase("es").startsWith(normalizedQuery)) ||
-        [record.product, record.origin, record.organization].some((value) =>
-          value.toLocaleLowerCase("es").includes(normalizedQuery),
-        );
+      const matchesId =
+        looksLikeLotPrefix && record.id.toLocaleLowerCase("es").startsWith(normalizedQuery);
+      const matchesText = [record.product, record.origin, record.organization].some((value) =>
+        value.toLocaleLowerCase("es").includes(normalizedQuery),
+      );
       const hasDeclaredCurrentCertificate = record.certificates.some(
         (certificate) =>
           certificate.issuedAt <= today &&
           (!certificate.validUntil || certificate.validUntil >= today),
       );
-      return matchesText && (!declaredValidOnly || hasDeclaredCurrentCertificate);
+      return (
+        (!normalizedQuery || matchesId || (!looksLikeLotPrefix && matchesText)) &&
+        (!declaredValidOnly || hasDeclaredCurrentCertificate)
+      );
     });
   }, [declaredValidOnly, query, records, today]);
 
@@ -56,8 +55,9 @@ export function BuyerDashboard({
       <h2 id="buyer-title" className="font-display text-2xl font-medium text-ink">
         Consulta de abastecimiento
       </h2>
-      <p className="mt-2 text-sm leading-6 text-gray-700 ">
-        Filtra lotes y revisa las evidencias declaradas para respaldar la evaluación de compra.
+      <p className="mt-2 text-sm leading-6 text-gray-700">
+        Busca por los primeros 8 caracteres del ID del QR, producto, origen u organización. Solo se
+        consultan los lotes permitidos para tu cuenta.
       </p>
       <div className="mt-5 flex flex-wrap items-end gap-4">
         <div className="grid min-w-60 flex-1 gap-1.5">
@@ -93,7 +93,7 @@ export function BuyerDashboard({
           Restaurando tu búsqueda guardada…
         </p>
       )}
-      <p className="mt-4 text-xs text-gray-700 " aria-live="polite">
+      <p className="mt-4 text-xs text-gray-700" aria-live="polite">
         {filteredRecords.length} de {records.length} lotes
       </p>
       <div className="mt-3 grid gap-3">
@@ -102,11 +102,11 @@ export function BuyerDashboard({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 className="mb-1 font-semibold text-ink">{record.product}</h3>
-                <p className="mb-0 text-sm text-gray-700 ">
+                <p className="mb-0 text-sm text-gray-700">
                   {record.origin} · {record.organization}
                 </p>
               </div>
-              <span className="text-xs text-gray-700 ">
+              <span className="text-xs text-gray-700">
                 {record.certificates.length}{" "}
                 {record.certificates.length === 1 ? "evidencia" : "evidencias"}
               </span>
@@ -116,70 +116,9 @@ export function BuyerDashboard({
                 <LotCharacteristics value={record.characteristics} />
               </div>
             )}
-            <LotJourney record={record} />
-            {record.certificates.length > 0 && (
-              <ul className="mt-4 grid gap-2 border-t border-line pt-3 text-sm">
-                {record.certificates.map((certificate) => (
-                  <li key={certificate.id}>
-                    <span className="font-medium text-ink">{certificate.name}</span>
-                    <span className="text-gray-700 ">
-                      {" "}
-                      · Emisor declarado: {certificate.issuer}
-                    </span>
-                    <span className="block text-xs text-gray-700 ">
-                      Emisión: {certificate.issuedAt}; vence:{" "}
-                      {certificate.validUntil || "sin fecha indicada"}
-                    </span>
-                    <span className="block break-all font-mono text-[11px] text-gray-700 ">
-                      SHA-256: {certificate.evidenceSha256}
-                    </span>
-                    <span className="block text-xs text-gray-700 ">
-                      Asociado por {certificate.recordedBy}; emisor declarado, no verificado.
-                    </span>
-                    {certificate.evidenceFileName && (
-                      <EvidenceFileLink
-                        evidenceId={certificate.evidenceId ?? certificate.id}
-                        fileName={certificate.evidenceFileName}
-                      />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {record.events.length > 0 && (
-              <ol
-                className="mt-4 grid gap-2 border-t border-line pt-3"
-                aria-label="Eventos del lote"
-              >
-                {record.events.map((event) => (
-                  <li key={event.id} className="text-sm">
-                    <p className="mb-1 font-medium text-ink">{event.type}</p>
-                    <p className="mb-1 text-xs text-gray-700">
-                      {new Intl.DateTimeFormat("es-CO", {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      }).format(new Date(event.occurredAt))}
-                      {" · "}
-                      {event.actorName} · {event.organization}
-                    </p>
-                    <p className="mb-1 text-sm text-ink">{event.details}</p>
-                    {event.evidenceSha256 && (
-                      <p className="mb-0 break-all font-mono text-[11px] text-gray-700">
-                        SHA-256 de evidencia: {event.evidenceSha256}
-                      </p>
-                    )}
-                    {event.evidenceFileName && (
-                      <EvidenceFileLink
-                        evidenceId={event.evidenceId ?? event.id}
-                        fileName={event.evidenceFileName}
-                      />
-                    )}
-                  </li>
-                ))}
-              </ol>
-            )}
+            <LotJourney record={record} showLocalEvidence />
             <p className="mt-3 mb-0 text-xs text-gray-700">
-              La asociación y el emisor son declaraciones de demo; no implican validación del
+              Los datos y emisores son declaraciones; la vigencia no constituye una validación del
               certificado.
             </p>
           </article>

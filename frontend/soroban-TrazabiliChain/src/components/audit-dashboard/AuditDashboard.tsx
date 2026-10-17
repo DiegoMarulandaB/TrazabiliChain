@@ -148,7 +148,12 @@ export function AuditDashboard({
                 <h4 className="mb-0 text-sm font-semibold text-ink">
                   {record.product} · {record.id.slice(0, 8)}
                 </h4>
-                <LotJourney record={record} />
+                <details className="mt-3 border-t border-line pt-3">
+                  <summary className="w-fit cursor-pointer text-sm font-semibold text-accent underline underline-offset-2">
+                    Ver recorrido completo del lote
+                  </summary>
+                  <LotJourney record={record} showLocalEvidence />
+                </details>
                 <AuditNotePanel
                   record={record}
                   author={actorName}

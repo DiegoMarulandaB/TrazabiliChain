@@ -18,9 +18,7 @@ import { TraceabilityActorAccess } from "@/components/organization-members/Trace
 import { BuyerDashboard } from "@/components/buyer-dashboard/BuyerDashboard";
 import { AuditDashboard } from "@/components/audit-dashboard/AuditDashboard";
 import { ConsumerScanner } from "@/components/consumer-scanner/ConsumerScanner";
-import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
 import { LotJourney } from "@/components/lot-journey/LotJourney";
-import { ProducerAnchorNotifications } from "@/components/notifications/ProducerAnchorNotifications";
 import { TraceabilityAnchor } from "@/components/traceability-anchor/TraceabilityAnchor";
 import { BorderBeamFrame } from "@/components/ui/motion/BorderBeamFrame";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -487,8 +485,6 @@ export function RecordsPanel({
           <WalletConnect />
         </div>
       </div>
-
-      {role === "producer" && <ProducerAnchorNotifications />}
 
       <BorderBeamFrame>
         <dl className="my-6 grid grid-cols-2 divide-x divide-y divide-line border-y border-line bg-white sm:grid-cols-4 sm:divide-y-0">
@@ -1399,88 +1395,10 @@ export function RecordsPanel({
                         </dd>
                       </div>
                     </dl>
-                    <LotJourney record={record} />
-                    {record.events.length > 0 && (
-                      <section
-                        className="mt-4 border-t border-line pt-4"
-                        aria-label="Eventos del lote"
-                      >
-                        <h4 className="mb-3 text-sm font-semibold text-ink">
-                          Historial de eventos
-                        </h4>
-                        <ol className="grid gap-3 border-l border-line pl-4">
-                          {record.events.map((lotEvent) => (
-                            <li key={lotEvent.id} className="relative">
-                              <span
-                                className="absolute left-[-1.32rem] top-1.5 size-2 rounded-full bg-accent"
-                                aria-hidden="true"
-                              />
-                              <p className="mb-1 text-sm font-medium text-ink">{lotEvent.type}</p>
-                              <p className="mb-1 text-xs text-gray-700">
-                                {new Intl.DateTimeFormat("es-CO", {
-                                  dateStyle: "medium",
-                                  timeStyle: "short",
-                                }).format(new Date(lotEvent.occurredAt))}
-                                {" · "}
-                                {lotEvent.actorName} · {lotEvent.organization}
-                              </p>
-                              <p className="mb-0 text-sm leading-5 text-ink">{lotEvent.details}</p>
-                              {lotEvent.evidenceFileName && (
-                                <div className="mt-2">
-                                  <EvidenceFileLink
-                                    evidenceId={lotEvent.evidenceId ?? lotEvent.id}
-                                    fileName={lotEvent.evidenceFileName}
-                                  />
-                                </div>
-                              )}
-                            </li>
-                          ))}
-                        </ol>
-                      </section>
-                    )}
-                    {record.certificates.length > 0 && (
-                      <section
-                        className="mt-4 border-t border-line pt-4"
-                        aria-label="Certificados asociados"
-                      >
-                        <h4 className="mb-2 text-sm font-semibold text-ink">
-                          Certificados asociados
-                        </h4>
-                        <ul className="grid gap-3">
-                          {record.certificates.map((certificate) => (
-                            <li key={certificate.id} className="text-sm">
-                              <p className="mb-1 font-medium text-ink">{certificate.name}</p>
-                              <p className="mb-1 text-xs text-gray-700">
-                                Emisor declarado: {certificate.issuer} ·{" "}
-                                {certificate.certificateNumber}
-                              </p>
-                              <p className="mb-1 break-all font-mono text-[11px] text-gray-700">
-                                SHA-256: {certificate.evidenceSha256}
-                              </p>
-                              <p className="mb-2 text-xs text-gray-700">
-                                Asociado por {certificate.recordedBy} ·{" "}
-                                {certificate.recordedByRole
-                                  ? roleLabels[certificate.recordedByRole]
-                                  : "rol no registrado"}
-                              </p>
-                              {certificate.evidenceFileName && (
-                                <EvidenceFileLink
-                                  evidenceId={certificate.evidenceId ?? certificate.id}
-                                  fileName={certificate.evidenceFileName}
-                                />
-                              )}
-                              <p className="mb-0 text-xs text-gray-700">
-                                Asociado como evidencia; no implica que el emisor o certificado haya
-                                sido validado.
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                    )}
+                    <LotJourney record={record} showLocalEvidence />
                     {!record.isDeleted && <LotSharing record={record} />}
                     {!record.isDeleted && (
-                      <label className="mt-4 flex min-h-10 cursor-pointer items-center gap-2 text-sm font-medium text-ink">
+                      <label className="mt-4 flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium text-ink">
                         <input
                           type="checkbox"
                           checked={record.isPublic}

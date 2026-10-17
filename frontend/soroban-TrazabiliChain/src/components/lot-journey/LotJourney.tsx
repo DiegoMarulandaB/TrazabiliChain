@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { roleLabels } from "@/components/organization-members/OrganizationMembers";
+import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
 import type { DemoRole, LotRecord } from "@/lib/lots/lot-storage";
 import { getLotEventCount, getLotEventHash } from "@/lib/stellar/read";
 import { getPublicLotHash } from "@/lib/stellar/lot-hash";
@@ -10,9 +11,12 @@ type JourneyStep = {
   id: string;
   title: string;
   occurredAt: string;
+  actor: string;
   profile: DemoRole | null;
   organization: string;
   detail: string;
+  evidenceId?: string;
+  evidenceFileName?: string;
 };
 
 function formatJourneyDate(value: string) {
@@ -22,7 +26,13 @@ function formatJourneyDate(value: string) {
   }).format(new Date(value));
 }
 
-export function LotJourney({ record }: { record: LotRecord }) {
+export function LotJourney({
+  record,
+  showLocalEvidence = false,
+}: {
+  record: LotRecord;
+  showLocalEvidence?: boolean;
+}) {
   const [isCheckingAnchor, setIsCheckingAnchor] = useState(false);
   const [anchorStatus, setAnchorStatus] = useState("");
   const [anchorError, setAnchorError] = useState(false);
@@ -31,6 +41,7 @@ export function LotJourney({ record }: { record: LotRecord }) {
       id: `origin-${record.id}`,
       title: "Lote registrado",
       occurredAt: record.createdAt,
+      actor: record.createdBy,
       profile: record.createdByRole ?? "producer",
       organization: record.createdByOrganization || record.organization,
       detail: `${record.product} · ${record.origin}`,
@@ -39,19 +50,30 @@ export function LotJourney({ record }: { record: LotRecord }) {
       id: `event-${event.id}`,
       title: event.type,
       occurredAt: event.occurredAt,
+      actor: event.actorName,
       profile: event.actorRole,
       organization: event.organization,
       detail: event.evidenceSha256
         ? `${event.details} · SHA-256 de evidencia: ${event.evidenceSha256}`
         : event.details,
+      ...(event.evidenceFileName
+        ? { evidenceId: event.evidenceId ?? event.id, evidenceFileName: event.evidenceFileName }
+        : {}),
     })),
     ...record.certificates.map((certificate) => ({
       id: `certificate-${certificate.id}`,
       title: `Certificado asociado · ${certificate.name}`,
       occurredAt: certificate.recordedAt,
+      actor: certificate.recordedBy,
       profile: certificate.recordedByRole,
       organization: certificate.recordedByOrganization,
-      detail: `${certificate.issuer} · ${certificate.certificateNumber} · SHA-256: ${certificate.evidenceSha256}`,
+      detail: `${certificate.issuer} · ${certificate.certificateNumber} · Emisión: ${certificate.issuedAt} · Vigencia: ${certificate.validUntil || "sin vencimiento indicado"} · SHA-256: ${certificate.evidenceSha256}`,
+      ...(certificate.evidenceFileName
+        ? {
+            evidenceId: certificate.evidenceId ?? certificate.id,
+            evidenceFileName: certificate.evidenceFileName,
+          }
+        : {}),
     })),
   ].sort((first, second) => first.occurredAt.localeCompare(second.occurredAt));
 
@@ -101,11 +123,16 @@ export function LotJourney({ record }: { record: LotRecord }) {
             />
             <p className="mb-1 text-sm font-medium text-ink">{step.title}</p>
             <p className="mb-1 text-xs text-gray-700">
-              {formatJourneyDate(step.occurredAt)} ·{" "}
+              {formatJourneyDate(step.occurredAt)} · {step.actor} ·{" "}
               {step.profile ? roleLabels[step.profile] : "Perfil no registrado"} ·{" "}
               {step.organization}
             </p>
             <p className="mb-0 wrap-break-word text-sm leading-5 text-ink">{step.detail}</p>
+            {showLocalEvidence && step.evidenceFileName && step.evidenceId && (
+              <div className="mt-2">
+                <EvidenceFileLink evidenceId={step.evidenceId} fileName={step.evidenceFileName} />
+              </div>
+            )}
           </li>
         ))}
       </ol>

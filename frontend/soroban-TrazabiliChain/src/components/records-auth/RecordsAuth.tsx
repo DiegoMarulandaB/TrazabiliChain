@@ -28,14 +28,22 @@ type AccessStage =
 type AuthMode = "signIn" | "signUp";
 const productOptions = ["Café orgánico", "Cacao orgánico", "Algodón orgánico"];
 const workflowRoleEventName = "trazabilichain:workflow-role-change";
-const rolesWithDashboardLotList: DemoRole[] = ["producer", "b2bBuyer"];
+const rolesWithDashboardLotList: DemoRole[] = ["producer"];
 const rolesWithLotPrefixLookup: DemoRole[] = [
   "supplyActor",
   "certifier",
   "organizationAdmin",
   "auditor",
   "consumer",
+  "b2bBuyer",
 ];
+
+function getStageForRole(role: DemoRole): AccessStage {
+  if (rolesWithDashboardLotList.includes(role)) return "dashboard";
+  if (rolesWithLotPrefixLookup.includes(role)) return "lotLookup";
+  return "dashboard";
+}
+
 const roleDescriptions: Record<DemoRole, string> = {
   producer: "Registra lotes y su origen; después puede publicar un QR y anclar una huella.",
   supplyActor: "Añade al historial los traslados y otras etapas de la cadena.",
@@ -64,9 +72,12 @@ export function RecordsAuth() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | "info">("error");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSubmittedCredentials, setHasSubmittedCredentials] = useState(false);
+  const authAttemptStartedRef = useRef(false);
+  const workflowRoleRef = useRef(workflowRole);
   const loginTourRef = useRef<ReturnType<typeof driver> | null>(null);
   const workspacePreferencesDraft = useWorkDraft({
-    userId: authUserId,
+    userId: hasSubmittedCredentials ? null : authUserId,
     role: "producer",
     product: productOptions[0],
     draftKey: "workspace-preferences",
@@ -74,6 +85,7 @@ export function RecordsAuth() {
     enabled: Boolean(authUserId),
     onRestore: (draft) => {
       if (draft.workflowRole && demoRoles.includes(draft.workflowRole)) {
+        workflowRoleRef.current = draft.workflowRole;
         setWorkflowRole(draft.workflowRole);
       }
       if (draft.selectedProduct && productOptions.includes(draft.selectedProduct)) {
@@ -94,6 +106,10 @@ export function RecordsAuth() {
   });
 
   useEffect(() => () => loginTourRef.current?.destroy(), []);
+
+  useEffect(() => {
+    workflowRoleRef.current = workflowRole;
+  }, [workflowRole]);
 
   function startLoginGuide() {
     loginTourRef.current?.destroy();
@@ -161,7 +177,7 @@ export function RecordsAuth() {
         await supabase.auth.signOut();
         session = null;
       }
-      if (isMounted) {
+      if (isMounted && !authAttemptStartedRef.current) {
         setAuthUserId(session && !session.user.is_anonymous ? session.user.id : null);
         setStage(session ? "workflowPreferences" : "credentials");
       }
@@ -176,20 +192,18 @@ export function RecordsAuth() {
       if (event === "INITIAL_SESSION") {
         const accountSession = session && !session.user.is_anonymous;
         setAuthUserId(accountSession ? session.user.id : null);
-        setStage(accountSession ? "workflowPreferences" : "credentials");
+        setStage(
+          accountSession
+            ? authAttemptStartedRef.current
+              ? getStageForRole(workflowRoleRef.current)
+              : "workflowPreferences"
+            : "credentials",
+        );
         return;
       }
       const accountSession = session && !session.user.is_anonymous;
       setAuthUserId(accountSession ? session.user.id : null);
-      setStage(
-        accountSession
-          ? rolesWithDashboardLotList.includes(workflowRole)
-            ? "dashboard"
-            : rolesWithLotPrefixLookup.includes(workflowRole)
-              ? "lotLookup"
-              : "dashboard"
-          : "credentials",
-      );
+      setStage(accountSession ? getStageForRole(workflowRoleRef.current) : "credentials");
       if (event === "SIGNED_IN" && accountSession) {
         toast.success("Acceso confirmado.");
       }
@@ -199,24 +213,20 @@ export function RecordsAuth() {
       isMounted = false;
       data.subscription.unsubscribe();
     };
-  }, [workflowRole]);
+  }, []);
 
   function continueAfterAuthentication() {
     void saveProductNotificationPreference(selectedProduct);
-    setStage(
-      rolesWithDashboardLotList.includes(workflowRole) ||
-        !rolesWithLotPrefixLookup.includes(workflowRole)
-        ? "dashboard"
-        : "lotLookup",
+    window.dispatchEvent(
+      new CustomEvent(workflowRoleEventName, { detail: { role: workflowRole } }),
     );
+    setStage(getStageForRole(workflowRoleRef.current));
   }
 
   function selectWorkflowRole(value: string) {
     const selectedRole = value as DemoRole;
+    workflowRoleRef.current = selectedRole;
     setWorkflowRole(selectedRole);
-    window.dispatchEvent(
-      new CustomEvent(workflowRoleEventName, { detail: { role: selectedRole } }),
-    );
   }
 
   async function submitCredentials(event: FormEvent<HTMLFormElement>) {
@@ -228,6 +238,8 @@ export function RecordsAuth() {
       return;
     }
 
+    setHasSubmittedCredentials(true);
+    authAttemptStartedRef.current = true;
     setIsSubmitting(true);
     try {
       if (mode === "signUp") {
@@ -339,6 +351,7 @@ export function RecordsAuth() {
         notify("No se pudo cerrar la sesión. Inténtalo de nuevo.");
         return;
       }
+      window.dispatchEvent(new CustomEvent(workflowRoleEventName, { detail: { role: null } }));
       setAuthUserId(null);
       setStage("credentials");
       setPassword("");

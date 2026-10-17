@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ProductNotificationsBell } from "@/components/notifications/ProductNotificationsBell";
+import { ProducerAnchorNotifications } from "@/components/notifications/ProducerAnchorNotifications";
 import type { DemoRole } from "@/lib/lots/lot-storage";
 
 const navigation = [
@@ -14,7 +15,7 @@ const workflowRoleEventName = "trazabilichain:workflow-role-change";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showProductNotifications, setShowProductNotifications] = useState(false);
+  const [activeRole, setActiveRole] = useState<DemoRole | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
@@ -47,8 +48,8 @@ export function Header() {
 
   useEffect(() => {
     function handleWorkflowRoleChange(event: Event) {
-      const detail = (event as CustomEvent<{ role: DemoRole }>).detail;
-      setShowProductNotifications(detail.role !== "producer");
+      const detail = (event as CustomEvent<{ role: DemoRole | null }>).detail;
+      setActiveRole(detail.role);
     }
 
     window.addEventListener(workflowRoleEventName, handleWorkflowRoleChange);
@@ -101,7 +102,8 @@ export function Header() {
             ))}
           </nav>
 
-          {showProductNotifications && <ProductNotificationsBell />}
+          {activeRole === "producer" && <ProducerAnchorNotifications />}
+          {activeRole && activeRole !== "producer" && <ProductNotificationsBell />}
 
           <span className="inline-flex items-center gap-2 whitespace-nowrap text-[11px] text-muted sm:text-xs">
             <span
