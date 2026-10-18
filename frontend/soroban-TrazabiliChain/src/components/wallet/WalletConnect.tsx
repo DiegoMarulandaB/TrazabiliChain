@@ -3,6 +3,7 @@
 import { ArrowSquareOut, SignOut, Wallet } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
+import { formatStellarAddress } from "@/lib/stellar/format-address";
 
 export function WalletConnect() {
   const { address, connect, disconnect, isReady } = useStellarWallet();
@@ -11,7 +12,7 @@ export function WalletConnect() {
     try {
       const address = await connect();
       toast.success("Wallet de Stellar conectada.", {
-        description: `${address.slice(0, 6)}…${address.slice(-5)}`,
+        description: formatStellarAddress(address),
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo conectar la wallet.");
@@ -42,6 +43,8 @@ export function WalletConnect() {
     );
   }
 
+  const displayedAddress = formatStellarAddress(address);
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <a
@@ -49,9 +52,9 @@ export function WalletConnect() {
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex min-h-10 max-w-full items-center gap-2 rounded-md border border-line bg-white px-3 font-mono text-xs text-ink hover:bg-paper focus-visible:outline-offset-2"
-        aria-label={`Wallet conectada ${address}. Abrir cuenta en Stellar Expert, nueva pestaña`}
+        aria-label={`Wallet conectada ${displayedAddress}. Abrir cuenta en Stellar Expert, nueva pestaña`}
       >
-        <span className="max-w-48 truncate">{address}</span>
+        <span>{displayedAddress}</span>
         <ArrowSquareOut size={15} aria-hidden="true" />
       </a>
       <button

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useWorkDraft } from "@/hooks/useWorkDraft";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
+import { formatStellarAddress } from "@/lib/stellar/format-address";
 import { setTraceabilityActorAuthorization } from "@/lib/stellar/write";
 
 export function TraceabilityActorAccess({
@@ -84,7 +85,7 @@ export function TraceabilityActorAccess({
       </p>
       {address && (
         <p className="mb-4 break-all font-mono text-xs text-gray-700" role="status">
-          Wallet conectada: {address}
+          Wallet conectada: {formatStellarAddress(address)}
         </p>
       )}
       <form
@@ -136,7 +137,7 @@ export function TraceabilityActorAccess({
       <ConfirmDialog
         open={pendingAuthorization !== null}
         title={pendingAuthorization ? "Confirmar autorización" : "Confirmar revocación"}
-        description={`Verifica que la wallet ${actorAddress.trim()} sea correcta. Esta acción solicitará una firma y pagará la tarifa de red.`}
+        description={`Verifica que la wallet ${formatStellarAddress(actorAddress.trim())} sea correcta. Esta acción solicitará una firma y pagará la tarifa de red.`}
         helperText="Si esta acción corresponde a un lote, conserva los primeros 8 caracteres de su ID del QR; no ingreses la URL completa."
         confirmLabel={pendingAuthorization ? "Autorizar" : "Revocar"}
         isBusy={isSubmitting}

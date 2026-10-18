@@ -2,6 +2,7 @@ import { Address, Networks, TransactionBuilder, rpc } from "@stellar/stellar-sdk
 import type { AssembledTransaction } from "@stellar/stellar-sdk/contract";
 import { Buffer } from "buffer";
 import { Client as TraceabilityRegistryClient } from "@trazabilichain/traceability-registry";
+import { formatStellarAddress } from "@/lib/stellar/format-address";
 
 const testnetRpcUrl =
   process.env.NEXT_PUBLIC_SOROBAN_RPC_URL ?? "https://soroban-testnet.stellar.org";
@@ -157,7 +158,7 @@ export async function setTraceabilityActorAuthorization(
 
   if (adminAddress !== contractAdmin) {
     throw new Error(
-      `La wallet conectada (${adminAddress}) no es la administradora de este contrato. Conecta ${contractAdmin} en Freighter. El campo “Wallet Stellar del actor” es para la dirección que quieres autorizar, no para la administradora.`,
+      `La wallet conectada (${formatStellarAddress(adminAddress)}) no es la administradora de este contrato. Conecta ${formatStellarAddress(contractAdmin)} en Freighter. El campo “Wallet Stellar del actor” es para la dirección que quieres autorizar, no para la administradora.`,
     );
   }
 
