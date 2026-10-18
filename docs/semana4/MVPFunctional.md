@@ -70,7 +70,7 @@ Las hipótesis se considerarán apoyadas si al menos cuatro de cinco responsable
 - Despliegue anterior del contrato en Stellar Testnet: [CBOJPR4LUMXN3YMO5QAM76XPIMYHFL23OYBGB5HHYSS45WCIXREQETNZ](https://stellar.expert/explorer/testnet/contract/CBOJPR4LUMXN3YMO5QAM76XPIMYHFL23OYBGB5HHYSS45WCIXREQETNZ). El WASM actual, pendiente de despliegue, tiene SHA-256 `6a187a5f796587465015cef2ea9e5a544e4d9dbf6306496c1796e904d30f9154`.
 - Enlace público del producto: [dominio](https://trazabilichain.vercel.app/)
 - Transacción de anclaje de esta iteración: pendiente de generar y enlazar desde una wallet autorizada en Testnet.
-- Video público [link]()
+- Video público [link](https://youtu.be/Irx8uoWZcgA)
 - Entrega en Apex: realizada
 
 ## Contrato de trazabilidad
