@@ -55,7 +55,7 @@ Los lotes, eventos y metadatos de certificados quedan preparados para persistenc
 
 El contrato desplegado en Stellar Testnet es anterior al WASM local que extiende TTL; no se publicó la versión nueva. Las entradas persistentes pueden archivarse si quedan inactivas y el cliente no implementa restauración. La wallet firma anclajes, pero no autentica Supabase ni certifica el origen físico. Los hashes no prueban que el dato inicial sea cierto. CSP mantiene `unsafe-inline`; faltan bitácora, alertas y pruebas de penetración. El audit corrigió los avisos altos de Axios, pero mantiene cuatro moderados en `uuid`/`stream-json` y uno bajo en `elliptic`, dependencias transitivas del wallet kit. OWASP Top 10:2025 es una guía de riesgos, no una certificación.
 
-No hay una URL pública del producto ni un hash de transacción de esta revisión para enlazar. La carga en Apex y el video público de máximo tres minutos quedan a cargo de Diego, según su instrucción; no se grabaron ni publicaron en esta tarea.
+No hay una URL pública del producto ni un hash de transacción de esta revisión para enlazar.
 
 # Plan de validación con usuarios
 
@@ -70,8 +70,20 @@ Las hipótesis se considerarán apoyadas si al menos cuatro de cinco responsable
 - Despliegue anterior del contrato en Stellar Testnet: [CBOJPR4LUMXN3YMO5QAM76XPIMYHFL23OYBGB5HHYSS45WCIXREQETNZ](https://stellar.expert/explorer/testnet/contract/CBOJPR4LUMXN3YMO5QAM76XPIMYHFL23OYBGB5HHYSS45WCIXREQETNZ). El WASM actual, pendiente de despliegue, tiene SHA-256 `6a187a5f796587465015cef2ea9e5a544e4d9dbf6306496c1796e904d30f9154`.
 - Enlace público del producto: [dominio](https://trazabilichain.vercel.app/)
 - Transacción de anclaje de esta iteración: pendiente de generar y enlazar desde una wallet autorizada en Testnet.
-- Video público de máximo tres minutos: pendiente de publicación por Diego Marulanda.
+- Video público [link]()
 - Entrega en Apex: realizada
+
+## Contrato de trazabilidad
+
+Ver carpeta semana3 archivo [Documentación.md], apartado Contrato de trazabilidad.
+
+## Tecnología del track de integración del SCF
+
+Ver carpeta semana3 archivo [Documentación.md], apartado escrow de pagos.
+
+## Proyectos similares
+
+Ver carpeta semana3 archivo [Documentación.md], apartado proyectos similares.
 
 ## Configuración de Supabase
 

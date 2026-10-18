@@ -93,18 +93,6 @@ export function RecordsAuth() {
       }
     },
   });
-  const lotLookupDraft = useWorkDraft({
-    userId: authUserId,
-    role: workflowRole,
-    product: selectedProduct,
-    draftKey: "lot-lookup",
-    payload: { lotPrefix },
-    enabled: stage === "lotLookup",
-    onRestore: (draft) => {
-      if (draft.lotPrefix !== undefined) setLotPrefix(draft.lotPrefix);
-    },
-  });
-
   useEffect(() => () => loginTourRef.current?.destroy(), []);
 
   useEffect(() => {
@@ -555,7 +543,6 @@ export function RecordsAuth() {
               pattern="[0-9a-fA-F]{8}[0-9a-fA-F-]{0,28}"
               autoComplete="off"
               spellCheck={false}
-              disabled={!lotLookupDraft.isReady}
               value={lotPrefix}
               onChange={(event) => setLotPrefix(event.target.value)}
               className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 font-mono text-sm text-ink disabled:opacity-60"
@@ -568,14 +555,10 @@ export function RecordsAuth() {
           </div>
           <button
             type="submit"
-            disabled={isSearchingLots || !lotLookupDraft.isReady}
+            disabled={isSearchingLots}
             className="min-h-11 self-end rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746] disabled:cursor-wait disabled:opacity-60"
           >
-            {!lotLookupDraft.isReady
-              ? "Restaurando…"
-              : isSearchingLots
-                ? "Buscando…"
-                : "Buscar lote"}
+            {isSearchingLots ? "Buscando…" : "Buscar lote"}
           </button>
         </form>
         {candidates.length > 0 && (
