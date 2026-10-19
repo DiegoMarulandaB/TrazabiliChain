@@ -98,6 +98,7 @@ export function RecordsPanel({
     : initialRole === "producer" && initialProduct
       ? storedRecords.filter((record) => record.product === initialProduct)
       : storedRecords;
+  const selectedLot = selectedLotId ? records[0] : undefined;
   const [form, setForm] = useState<LotForm>(() => ({ ...initialForm, product: initialProduct }));
   const [variety, setVariety] = useState("");
   const [presentation, setPresentation] = useState("");
@@ -529,6 +530,38 @@ export function RecordsPanel({
             El rol cambia las vistas disponibles en esta demostración; no representa permisos de
             organización.
           </p>
+          {selectedLot && role !== "consumer" && (
+            <div
+              role="group"
+              aria-label="Datos declarados al crear el lote"
+              className="mt-3 border-l-2 border-accent px-3 py-2"
+            >
+              <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
+                <div className="min-w-0">
+                  <dt className="text-xs font-semibold text-gray-700">Actor declarado al crear</dt>
+                  <dd className="mb-0 wrap-break-word text-ink">
+                    {selectedLot.createdBy}
+                    {selectedLot.createdByRole && ` · ${roleLabels[selectedLot.createdByRole]}`}
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs font-semibold text-gray-700">Organización declarada</dt>
+                  <dd className="mb-0 wrap-break-word text-ink">
+                    {selectedLot.createdByOrganization || selectedLot.organization}
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs font-semibold text-gray-700">Organización responsable</dt>
+                  <dd className="mb-0 wrap-break-word text-ink">{selectedLot.organization}</dd>
+                </div>
+              </dl>
+              <p className="mt-2 mb-0 text-xs leading-5 text-gray-700">
+                Son los datos declarados por quien creó el lote; no verifican identidad ni
+                pertenencia. El actor y la organización que declares abajo corresponden a tu
+                registro actual.
+              </p>
+            </div>
+          )}
           <div className="mt-3">
             <RoleGuide key={role} role={role} />
           </div>
@@ -1337,9 +1370,6 @@ export function RecordsPanel({
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        {record.characteristics && (
-                          <LotCharacteristics value={record.characteristics} />
-                        )}
                         <h3 className="mb-1 font-semibold text-ink">{record.product}</h3>
                         {record.isDeleted && (
                           <p className="mb-1 text-xs font-semibold text-red-800">
@@ -1399,6 +1429,14 @@ export function RecordsPanel({
                         </dd>
                       </div>
                     </dl>
+                    {record.characteristics && (
+                      <section
+                        className="mt-4 border-t border-line pt-3"
+                        aria-label="Características del producto"
+                      >
+                        <LotCharacteristics value={record.characteristics} />
+                      </section>
+                    )}
                     <LotJourney record={record} showLocalEvidence />
                     {!record.isDeleted && <LotSharing record={record} />}
                     {!record.isDeleted && (
@@ -1447,7 +1485,7 @@ export function RecordsPanel({
                                 certificate.recordedByOrganization === activeOrganization,
                             ))
                         }
-                        notifyProducer={role === "organizationAdmin"}
+                        notifyProducer
                       />
                     )}
                     {role === "producer" && (

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useWorkDraft } from "@/hooks/useWorkDraft";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
+import { notifyOwnWalletAuthorization } from "@/lib/lots/anchor-notifications";
 import { formatStellarAddress } from "@/lib/stellar/format-address";
 import { setTraceabilityActorAuthorization } from "@/lib/stellar/write";
 
@@ -51,11 +52,18 @@ export function TraceabilityActorAccess({
         authorized,
         signTransaction,
       );
+      const notificationSaved = await notifyOwnWalletAuthorization(
+        actorAddress.trim(),
+        result.transactionHash,
+        authorized,
+      );
       toast.success(
         authorized ? "Wallet autorizada en el contrato." : "Acceso revocado en el contrato.",
         {
           id: toastId,
-          description: `Tarifa de red: ${result.feeXlm} XLM`,
+          description: notificationSaved
+            ? `Tarifa de red: ${result.feeXlm} XLM. El aviso aparecerá en la campana del perfil Productor de esta cuenta.`
+            : `Tarifa de red: ${result.feeXlm} XLM. No se pudo guardar el aviso; comprueba que la migración de notificaciones esté aplicada.`,
         },
       );
       setActorAddress("");
@@ -79,8 +87,9 @@ export function TraceabilityActorAccess({
         Acceso de escritura al contrato
       </h3>
       <p className="mb-4 max-w-2xl text-sm leading-6 text-gray-700">
-        La wallet conectada debe ser la administradora configurada en `__constructor`.
-        En el campo siguiente escribe la dirección del actor que quieres autorizar o revocar. El contrato verificará el permiso antes de solicitar una firma.
+        La wallet conectada debe ser la administradora configurada en `__constructor`. En el campo
+        siguiente escribe la dirección del actor que quieres autorizar o revocar. El contrato
+        verificará el permiso antes de solicitar una firma.
       </p>
       {address && (
         <p className="mb-4 break-all font-mono text-xs text-gray-700" role="status">

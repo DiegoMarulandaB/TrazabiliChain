@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
 import { getLotEventCount, getLotEventHash } from "@/lib/stellar/read";
-import { anchorLotHash, getTraceabilityContractAdmin } from "@/lib/stellar/write";
+import { anchorLotHash } from "@/lib/stellar/write";
 import { getPublicLotHash } from "@/lib/stellar/lot-hash";
 import { notifyOwnerOfLotAnchor } from "@/lib/lots/anchor-notifications";
 import type { LotRecord } from "@/lib/lots/lot-storage";
@@ -20,6 +20,7 @@ type AnchorStatus = {
   message: string;
   latestHash?: string;
   isError?: boolean;
+  isCurrentHashAnchored?: boolean;
 };
 
 export function useLotAnchor(
@@ -32,7 +33,7 @@ export function useLotAnchor(
   const [result, setResult] = useState<AnchorResult | null>(null);
   const [anchorStatus, setAnchorStatus] = useState<AnchorStatus | null>(null);
 
-  async function checkAnchor() {
+  const checkAnchor = useCallback(async () => {
     setIsCheckingAnchor(true);
     setAnchorStatus(null);
     try {
@@ -41,6 +42,7 @@ export function useLotAnchor(
         setAnchorStatus({
           record,
           message: "No hay una huella registrada en Stellar para este lote.",
+          isCurrentHashAnchored: false,
         });
         return;
       }
@@ -51,18 +53,20 @@ export function useLotAnchor(
           record,
           message: "Stellar no devolvió la última huella del lote.",
           isError: true,
+          isCurrentHashAnchored: false,
         });
         return;
       }
 
       const currentHash = await getPublicLotHash(record);
+      const isCurrentHashAnchored = latestHash === currentHash;
       setAnchorStatus({
         record,
         latestHash,
-        message:
-          latestHash === currentHash
-            ? `La última huella coincide con la ficha actual. Anclajes registrados: ${eventCount}.`
-            : `Hay una huella anterior, pero no coincide con la ficha actual. Anclajes registrados: ${eventCount}.`,
+        isCurrentHashAnchored,
+        message: isCurrentHashAnchored
+          ? `La huella actual ya está anclada. No hace falta repetirla. Anclajes registrados: ${eventCount}.`
+          : `La última huella no coincide con la ficha actual. Puedes anclar esta versión. Anclajes registrados: ${eventCount}.`,
       });
     } catch (error) {
       setAnchorStatus({
@@ -72,11 +76,12 @@ export function useLotAnchor(
             ? error.message
             : `No se pudo consultar el contrato en Stellar ${stellarNetwork.label}.`,
         isError: true,
+        isCurrentHashAnchored: false,
       });
     } finally {
       setIsCheckingAnchor(false);
     }
-  }
+  }, [record]);
 
   async function anchor() {
     if (!address) {
@@ -99,6 +104,7 @@ export function useLotAnchor(
             record,
             latestHash,
             message: `La última huella ya coincide con la ficha actual. Anclajes registrados: ${eventCount}.`,
+            isCurrentHashAnchored: true,
           });
           toast.info("La huella más reciente ya coincide con esta ficha.", { id: toastId });
           return;
@@ -111,10 +117,7 @@ export function useLotAnchor(
       let producerNotified: boolean | undefined;
       if (notifyProducer) {
         try {
-          const contractAdmin = await getTraceabilityContractAdmin();
-          if (contractAdmin === address) {
-            producerNotified = await notifyOwnerOfLotAnchor(record.id, transaction.transactionHash);
-          }
+          producerNotified = await notifyOwnerOfLotAnchor(record.id, transaction.transactionHash);
         } catch {
           producerNotified = false;
         }
