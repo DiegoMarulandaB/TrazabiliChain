@@ -44,10 +44,16 @@ export function OrganizationMembers({
   product: string;
 }) {
   const allMembers = useOrganizationMembers();
-  const members = allMembers.filter(
+  const [showAllMembers, setShowAllMembers] = useState(false);
+  const organizationMembers = allMembers.filter(
     (member) =>
       normalizeOrganization(member.organization) === normalizeOrganization(activeOrganization),
   );
+  const otherOrganizationMembers = allMembers.filter(
+    (member) =>
+      normalizeOrganization(member.organization) !== normalizeOrganization(activeOrganization),
+  );
+  const members = showAllMembers ? allMembers : organizationMembers;
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [organization, setOrganization] = useState(activeOrganization);
@@ -116,6 +122,18 @@ export function OrganizationMembers({
         controla permisos fuera de esta interfaz local. Se muestran solo los miembros de la
         organización indicada en el perfil actual.
       </p>
+      {otherOrganizationMembers.length > 0 && (
+        <button
+          type="button"
+          aria-pressed={showAllMembers}
+          onClick={() => setShowAllMembers((current) => !current)}
+          className="mt-3 min-h-11 text-left text-sm font-semibold text-accent underline underline-offset-2"
+        >
+          {showAllMembers
+            ? "Mostrar solo la organización del perfil"
+            : `Ver ${otherOrganizationMembers.length} miembro${otherOrganizationMembers.length === 1 ? "" : "s"} guardado${otherOrganizationMembers.length === 1 ? "" : "s"} en otras organizaciones`}
+        </button>
+      )}
 
       <form
         className="mt-5 grid min-w-0 gap-4 sm:grid-cols-2"
@@ -241,9 +259,11 @@ export function OrganizationMembers({
         ))}
         {members.length === 0 && (
           <li className="list-none border border-line bg-white px-4 py-6 text-center text-sm text-gray-700">
-            {activeOrganization.trim()
-              ? "Todavía no hay miembros para esta organización."
-              : "Indica la organización del perfil de trabajo para gestionar sus miembros."}
+            {allMembers.length > 0
+              ? "Los miembros guardados para otras organizaciones siguen en este navegador; no se eliminaron al cerrar sesión."
+              : activeOrganization.trim()
+                ? "Todavía no hay miembros para esta organización."
+                : "Indica la organización del perfil de trabajo para gestionar sus miembros."}
           </li>
         )}
       </ul>
@@ -304,9 +324,11 @@ export function OrganizationMembers({
             {members.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-700">
-                  {activeOrganization.trim()
-                    ? `Todavía no hay miembros guardados para ${activeOrganization.trim()}. Completa el formulario y pulsa Agregar miembro.`
-                    : "Indica la organización del perfil de trabajo para gestionar sus miembros."}
+                  {allMembers.length > 0
+                    ? "Los miembros guardados para otras organizaciones siguen en este navegador; no se eliminaron al cerrar sesión."
+                    : activeOrganization.trim()
+                      ? `Todavía no hay miembros guardados para ${activeOrganization.trim()}. Completa el formulario y pulsa Agregar miembro.`
+                      : "Indica la organización del perfil de trabajo para gestionar sus miembros."}
                 </td>
               </tr>
             )}

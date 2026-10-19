@@ -4,9 +4,10 @@ import { ArrowSquareOut, SignOut, Wallet } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useStellarWallet } from "@/hooks/useStellarWallet";
 import { formatStellarAddress } from "@/lib/stellar/format-address";
+import { getWalletNetworkLabel, stellarExplorerUrl, stellarNetwork } from "@/lib/stellar/network";
 
 export function WalletConnect() {
-  const { address, connect, disconnect, isReady } = useStellarWallet();
+  const { address, connect, disconnect, isReady, networkPassphrase } = useStellarWallet();
 
   async function handleConnect() {
     try {
@@ -44,11 +45,15 @@ export function WalletConnect() {
   }
 
   const displayedAddress = formatStellarAddress(address);
+  const walletNetworkLabel = networkPassphrase
+    ? getWalletNetworkLabel(networkPassphrase)
+    : "sin detectar";
+  const hasNetworkMismatch = networkPassphrase !== stellarNetwork.passphrase;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       <a
-        href={`https://stellar.expert/explorer/testnet/account/${address}`}
+        href={stellarExplorerUrl("account", address)}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex min-h-10 max-w-full items-center gap-2 rounded-md border border-line bg-white px-3 font-mono text-xs text-ink hover:bg-paper focus-visible:outline-offset-2"
@@ -67,8 +72,14 @@ export function WalletConnect() {
         <SignOut size={17} aria-hidden="true" />
       </button>
       <span className="sr-only" aria-live="polite">
-        Wallet de Stellar Testnet conectada.
+        Wallet de Stellar {walletNetworkLabel} conectada.
       </span>
+      {hasNetworkMismatch && (
+        <span className="basis-full text-xs leading-5 text-red-800" role="alert">
+          Wallet en {walletNetworkLabel}; la aplicación usa Stellar {stellarNetwork.label}. Cambia
+          la red de la wallet para firmar.
+        </span>
+      )}
     </div>
   );
 }

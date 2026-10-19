@@ -17,6 +17,7 @@ import {
   type LotRecord,
 } from "@/lib/lots/lot-storage";
 import { saveProductNotificationPreference } from "@/lib/lots/product-notifications";
+import { stellarNetwork } from "@/lib/stellar/network";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const hasSupabaseConfig = Boolean(
@@ -50,7 +51,7 @@ const roleDescriptions: Record<DemoRole, string> = {
   certifier: "Asocia certificados y sus archivos de evidencia a un lote.",
   organizationAdmin:
     "Gestiona el directorio local y, con la wallet administradora, autoriza actores en Soroban.",
-  b2bBuyer: "Consulta lotes y puede preparar un escrow opcional de prueba en Stellar Testnet.",
+  b2bBuyer: `Consulta lotes y puede preparar un escrow opcional en Stellar ${stellarNetwork.label}.`,
   auditor: "Revisa eventos, certificados y datos declarados sin modificar la evidencia fuente.",
   consumer: "Consulta la información que una organización decidió publicar mediante QR.",
 };
@@ -698,7 +699,9 @@ export function RecordsAuth() {
             Accede a los lotes, sus eventos y evidencias desde un solo espacio de trabajo.
           </p>
         </div>
-        <p className="mb-0 mt-10 text-xs text-white/60">TrazabiliChain · Stellar Testnet</p>
+        <p className="mb-0 mt-10 text-xs text-white/60">
+          TrazabiliChain · Stellar {stellarNetwork.label}
+        </p>
       </div>
 
       <div className="flex items-center p-6 sm:p-10">

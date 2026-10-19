@@ -1,6 +1,7 @@
-import { Networks, TransactionBuilder } from "@stellar/stellar-sdk";
+import { TransactionBuilder } from "@stellar/stellar-sdk";
 import type { DeploySingleReleaseEscrowPayload } from "@trustless-work/escrow-js/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { stellarNetwork } from "@/lib/stellar/network";
 
 type BuiltEscrow = {
   unsignedXdr: string;
@@ -53,7 +54,7 @@ async function callEscrowApi(body: Record<string, unknown>) {
 
 export async function buildSingleReleaseEscrow(payload: DeploySingleReleaseEscrowPayload) {
   const result = (await callEscrowApi({ action: "build", payload })) as Omit<BuiltEscrow, "feeXlm">;
-  const transaction = TransactionBuilder.fromXDR(result.unsignedXdr, Networks.TESTNET);
+  const transaction = TransactionBuilder.fromXDR(result.unsignedXdr, stellarNetwork.passphrase);
   const feeXlm = (Number(BigInt(transaction.fee)) / 10_000_000).toFixed(7);
   return { ...result, feeXlm } satisfies BuiltEscrow;
 }

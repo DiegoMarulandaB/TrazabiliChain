@@ -1,11 +1,10 @@
-import { Address, Networks, TransactionBuilder, rpc } from "@stellar/stellar-sdk";
+import { Address, TransactionBuilder, rpc } from "@stellar/stellar-sdk";
 import type { AssembledTransaction } from "@stellar/stellar-sdk/contract";
 import { Buffer } from "buffer";
 import { Client as TraceabilityRegistryClient } from "@trazabilichain/traceability-registry";
 import { formatStellarAddress } from "@/lib/stellar/format-address";
+import { stellarNetwork } from "@/lib/stellar/network";
 
-const testnetRpcUrl =
-  process.env.NEXT_PUBLIC_SOROBAN_RPC_URL ?? "https://soroban-testnet.stellar.org";
 const contractId = process.env.NEXT_PUBLIC_TRACEABILITY_CONTRACT_ID;
 
 export type SignTransaction = (xdr: string) => Promise<string>;
@@ -35,7 +34,7 @@ async function simulateSignAndSubmit<T>(
   invocation: AssembledTransaction<T>,
   signTransaction: SignTransaction,
 ) {
-  const server = new rpc.Server(testnetRpcUrl);
+  const server = new rpc.Server(stellarNetwork.rpcUrl);
   try {
     await invocation.simulate({ useUpgradedAuth: true });
   } catch (error) {
@@ -63,7 +62,7 @@ async function simulateSignAndSubmit<T>(
   }
   const feeXlm = (Number(BigInt(fee)) / 10_000_000).toFixed(7);
   const signedXdr = await signTransaction(preparedXdr);
-  const signedTransaction = TransactionBuilder.fromXDR(signedXdr, Networks.TESTNET);
+  const signedTransaction = TransactionBuilder.fromXDR(signedXdr, stellarNetwork.passphrase);
   const submission = await server.sendTransaction(signedTransaction);
 
   if (submission.status !== "PENDING") {
@@ -102,20 +101,18 @@ export async function anchorLotHash(
     );
   }
 
-  const server = new rpc.Server(testnetRpcUrl);
+  const server = new rpc.Server(stellarNetwork.rpcUrl);
   try {
     await server.getAccount(walletAddress);
   } catch {
-    throw new Error(
-      "La wallet no tiene una cuenta financiada en Stellar Testnet. Solicita XLM de prueba y vuelve a intentar.",
-    );
+    throw new Error(`La wallet no tiene una cuenta financiada en Stellar ${stellarNetwork.label}.`);
   }
 
   const client = new TraceabilityRegistryClient({
     contractId,
-    networkPassphrase: Networks.TESTNET,
+    networkPassphrase: stellarNetwork.passphrase,
     publicKey: walletAddress,
-    rpcUrl: testnetRpcUrl,
+    rpcUrl: stellarNetwork.rpcUrl,
   });
   const invocation = await client.record_event(
     { actor: walletAddress, lot_id: lotId, event_hash: Buffer.from(hash, "hex") },
@@ -129,7 +126,7 @@ export async function getTraceabilityContractAdmin() {
     throw new Error("Configura NEXT_PUBLIC_TRACEABILITY_CONTRACT_ID con el contrato desplegado.");
   }
 
-  const server = new rpc.Server(testnetRpcUrl);
+  const server = new rpc.Server(stellarNetwork.rpcUrl);
   try {
     const instance = await server.getContractInstance(contractId);
     const adminEntry = instance.storage()?.find((entry) => {
@@ -140,7 +137,7 @@ export async function getTraceabilityContractAdmin() {
     if (!adminValue) throw new Error("El contrato no contiene una dirección administradora.");
     return Address.fromScAddress(adminValue).toString();
   } catch {
-    throw new Error("No se pudo leer la wallet administradora del contrato en Testnet.");
+    throw new Error(`No se pudo leer la wallet administradora en Stellar ${stellarNetwork.label}.`);
   }
 }
 
@@ -170,9 +167,9 @@ export async function setTraceabilityActorAuthorization(
 
   const client = new TraceabilityRegistryClient({
     contractId,
-    networkPassphrase: Networks.TESTNET,
+    networkPassphrase: stellarNetwork.passphrase,
     publicKey: adminAddress,
-    rpcUrl: testnetRpcUrl,
+    rpcUrl: stellarNetwork.rpcUrl,
   });
   const invocation = authorized
     ? await client.authorize_actor(

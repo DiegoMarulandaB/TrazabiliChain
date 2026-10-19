@@ -8,6 +8,7 @@ import {
   type LotAnchorNotification,
 } from "@/lib/lots/anchor-notifications";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { stellarExplorerUrl, stellarNetwork } from "@/lib/stellar/network";
 
 export function ProducerAnchorNotifications() {
   const [notifications, setNotifications] = useState<LotAnchorNotification[]>([]);
@@ -123,7 +124,7 @@ export function ProducerAnchorNotifications() {
                 Anclajes de tus lotes
               </h2>
               <p className="mb-0 text-sm leading-5 text-gray-700">
-                Avisos privados de anclajes confirmados en Stellar Testnet.
+                Avisos privados de anclajes confirmados en Stellar {stellarNetwork.label}.
               </p>
             </div>
             <button
@@ -167,13 +168,13 @@ export function ProducerAnchorNotifications() {
                     ID del lote: {notification.lot_id}
                   </p>
                   <a
-                    href={`https://stellar.expert/explorer/testnet/tx/${notification.transaction_hash}`}
+                    href={stellarExplorerUrl("tx", notification.transaction_hash)}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => void openNotification(notification)}
                     className="inline-flex min-h-10 items-center text-sm font-semibold text-accent underline underline-offset-2"
                   >
-                    Ver transacción en Stellar Expert (Testnet)
+                    Ver transacción en Stellar Expert ({stellarNetwork.label})
                   </a>
                 </li>
               ))}

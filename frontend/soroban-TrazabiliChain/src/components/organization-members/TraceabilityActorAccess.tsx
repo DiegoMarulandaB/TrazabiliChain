@@ -79,9 +79,8 @@ export function TraceabilityActorAccess({
         Acceso de escritura al contrato
       </h3>
       <p className="mb-4 max-w-2xl text-sm leading-6 text-gray-700">
-        La wallet conectada en Freighter debe ser la administradora configurada en `__constructor`.
-        En el campo siguiente escribe la dirección del actor que quieres autorizar o revocar, no la
-        dirección administradora. El contrato verificará el permiso antes de solicitar una firma.
+        La wallet conectada debe ser la administradora configurada en `__constructor`.
+        En el campo siguiente escribe la dirección del actor que quieres autorizar o revocar. El contrato verificará el permiso antes de solicitar una firma.
       </p>
       {address && (
         <p className="mb-4 break-all font-mono text-xs text-gray-700" role="status">

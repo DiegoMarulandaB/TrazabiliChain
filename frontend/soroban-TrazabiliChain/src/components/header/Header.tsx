@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ProductNotificationsBell } from "@/components/notifications/ProductNotificationsBell";
 import { ProducerAnchorNotifications } from "@/components/notifications/ProducerAnchorNotifications";
 import type { DemoRole } from "@/lib/lots/lot-storage";
+import { stellarNetwork } from "@/lib/stellar/network";
 
 const navigation = [
   { href: "/#sobre", label: "Sobre" },
@@ -110,7 +111,7 @@ export function Header() {
               className="size-2 rounded-full bg-emerald-700 ring-[3px] ring-accent-soft"
               aria-hidden="true"
             />
-            <span className="hidden sm:inline">Stellar · Testnet</span>
+            <span className="hidden sm:inline">Stellar · {stellarNetwork.label}</span>
           </span>
 
           <button

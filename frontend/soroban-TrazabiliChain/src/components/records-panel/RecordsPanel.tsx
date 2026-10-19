@@ -27,6 +27,7 @@ import { FileUploadField } from "@/components/ui/FileUploadField";
 import { WalletConnect } from "@/components/wallet/WalletConnect";
 import { LotManagement } from "@/components/records-panel/LotManagement";
 import { RoleGuide } from "@/components/records-panel/RoleGuide";
+import { stellarNetwork } from "@/lib/stellar/network";
 import { countryOptions } from "@/lib/lots/country-options";
 import {
   loadLotRecords,
@@ -480,7 +481,7 @@ export function RecordsPanel({
       </div>
 
       <div className="my-5 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-5">
-        <p className="mb-0 text-sm text-gray-700">Red para pruebas: Stellar Testnet</p>
+        <p className="mb-0 text-sm text-gray-700">Red Stellar activa: {stellarNetwork.label}</p>
         <div data-tour-wallet>
           <WalletConnect />
         </div>
@@ -528,11 +529,14 @@ export function RecordsPanel({
             El rol cambia las vistas disponibles en esta demostración; no representa permisos de
             organización.
           </p>
+          <div className="mt-3">
+            <RoleGuide key={role} role={role} />
+          </div>
           {role === "organizationAdmin" && (
             <p className="mt-2 mb-0 text-xs leading-5 text-gray-700" role="note">
               El historial muestra solo los lotes accesibles para esta cuenta de Supabase. En cada
-              lote puedes consultar el último hash guardado en Stellar Testnet; cambiar de perfil no
-              concede acceso a registros de otras cuentas.
+              lote puedes consultar el último hash guardado en Stellar {stellarNetwork.label};
+              cambiar de perfil no concede acceso a registros de otras cuentas.
             </p>
           )}
         </div>
@@ -600,8 +604,6 @@ export function RecordsPanel({
           </p>
         )}
       </section>
-
-      <RoleGuide key={role} role={role} />
 
       <div className="grid gap-10 py-8 lg:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)] lg:gap-12 lg:py-10">
         {role === "producer" && (
@@ -787,6 +789,7 @@ export function RecordsPanel({
                       }
                     />
                     <select
+                      id="crop-currency"
                       aria-label="Divisa"
                       value={currency}
                       onChange={(event) => {
@@ -1162,6 +1165,7 @@ export function RecordsPanel({
               <div className="grid gap-1.5">
                 <label className="flex min-h-10 items-center gap-2 text-sm font-medium text-ink">
                   <input
+                    id="publish-lot"
                     type="checkbox"
                     checked={form.isPublic}
                     onChange={(event) =>

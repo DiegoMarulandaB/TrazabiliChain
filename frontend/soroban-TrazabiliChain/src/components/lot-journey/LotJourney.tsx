@@ -6,6 +6,7 @@ import { EvidenceFileLink } from "@/components/evidence-file/EvidenceFileLink";
 import type { DemoRole, LotRecord } from "@/lib/lots/lot-storage";
 import { getLotEventCount, getLotEventHash } from "@/lib/stellar/read";
 import { getPublicLotHash } from "@/lib/stellar/lot-hash";
+import { stellarNetwork } from "@/lib/stellar/network";
 
 type JourneyStep = {
   id: string;
@@ -84,7 +85,9 @@ export function LotJourney({
     try {
       const eventCount = await getLotEventCount(record.id);
       if (eventCount === 0) {
-        setAnchorStatus("Todavía no hay una huella de este lote en Stellar Testnet.");
+        setAnchorStatus(
+          `Todavía no hay una huella de este lote en Stellar ${stellarNetwork.label}.`,
+        );
         return;
       }
 
@@ -104,7 +107,9 @@ export function LotJourney({
     } catch (error) {
       setAnchorError(true);
       setAnchorStatus(
-        error instanceof Error ? error.message : "No se pudo consultar Stellar Testnet.",
+        error instanceof Error
+          ? error.message
+          : `No se pudo consultar Stellar ${stellarNetwork.label}.`,
       );
     } finally {
       setIsCheckingAnchor(false);
@@ -142,7 +147,9 @@ export function LotJourney({
         disabled={isCheckingAnchor}
         className="mt-4 inline-flex min-h-10 items-center justify-center rounded-md border border-line px-3 text-sm font-semibold text-ink hover:bg-paper disabled:cursor-wait disabled:opacity-60"
       >
-        {isCheckingAnchor ? "Consultando Testnet…" : "Consultar anclaje en Testnet"}
+        {isCheckingAnchor
+          ? `Consultando ${stellarNetwork.label}…`
+          : `Consultar estado del anclaje en ${stellarNetwork.label}`}
       </button>
       {anchorStatus && (
         <p

@@ -79,6 +79,7 @@ export function BuyerDashboard({
         </div>
         <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm text-ink">
           <input
+            id="buyer-valid-only"
             type="checkbox"
             checked={declaredValidOnly}
             disabled={!buyerDraft.isReady}

@@ -1,15 +1,13 @@
-import { Networks } from "@stellar/stellar-sdk";
 import { Client as TraceabilityRegistryClient } from "@trazabilichain/traceability-registry";
+import { stellarNetwork } from "@/lib/stellar/network";
 
-const testnetRpcUrl =
-  process.env.NEXT_PUBLIC_SOROBAN_RPC_URL ?? "https://soroban-testnet.stellar.org";
 const contractId = process.env.NEXT_PUBLIC_TRACEABILITY_CONTRACT_ID;
 
 function getClient() {
   return new TraceabilityRegistryClient({
     contractId: getContractId(),
-    networkPassphrase: Networks.TESTNET,
-    rpcUrl: testnetRpcUrl,
+    networkPassphrase: stellarNetwork.passphrase,
+    rpcUrl: stellarNetwork.rpcUrl,
   });
 }
 

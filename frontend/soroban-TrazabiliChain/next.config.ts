@@ -5,9 +5,12 @@ const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin
   : undefined;
 const supabaseRealtimeOrigin = supabaseOrigin?.replace(/^https:/, "wss:").replace(/^http:/, "ws:");
+const sorobanRpcOrigin = process.env.NEXT_PUBLIC_SOROBAN_RPC_URL
+  ? new URL(process.env.NEXT_PUBLIC_SOROBAN_RPC_URL).origin
+  : "https://soroban-testnet.stellar.org";
 const connectSources = [
   "'self'",
-  "https://soroban-testnet.stellar.org",
+  sorobanRpcOrigin,
   "https://api.web3modal.org",
   "https://explorer-api.walletconnect.com",
   "https://pulse.walletconnect.com",

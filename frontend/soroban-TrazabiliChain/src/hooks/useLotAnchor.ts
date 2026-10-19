@@ -8,6 +8,7 @@ import { anchorLotHash, getTraceabilityContractAdmin } from "@/lib/stellar/write
 import { getPublicLotHash } from "@/lib/stellar/lot-hash";
 import { notifyOwnerOfLotAnchor } from "@/lib/lots/anchor-notifications";
 import type { LotRecord } from "@/lib/lots/lot-storage";
+import { stellarNetwork } from "@/lib/stellar/network";
 
 type AnchorResult = {
   transactionHash: string;
@@ -69,7 +70,7 @@ export function useLotAnchor(
         message:
           error instanceof Error
             ? error.message
-            : "No se pudo consultar el contrato en Stellar Testnet.",
+            : `No se pudo consultar el contrato en Stellar ${stellarNetwork.label}.`,
         isError: true,
       });
     } finally {
@@ -83,7 +84,7 @@ export function useLotAnchor(
       return;
     }
 
-    const toastId = toast.loading("Comprobando el lote en Stellar Testnet…");
+    const toastId = toast.loading(`Comprobando el lote en Stellar ${stellarNetwork.label}…`);
     setIsAnchoring(true);
     setResult(null);
 
@@ -119,7 +120,7 @@ export function useLotAnchor(
         }
       }
       await checkAnchor();
-      toast.success("Huella confirmada en Stellar Testnet.", {
+      toast.success(`Huella confirmada en Stellar ${stellarNetwork.label}.`, {
         id: toastId,
         description: notifyProducer
           ? producerNotified

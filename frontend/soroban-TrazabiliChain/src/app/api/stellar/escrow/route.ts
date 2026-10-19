@@ -9,6 +9,7 @@ import {
 import type { DeploySingleReleaseEscrowPayload } from "@trustless-work/escrow-js/types";
 import { Address } from "@stellar/stellar-sdk";
 import { NextResponse } from "next/server";
+import { stellarNetwork } from "@/lib/stellar/network";
 
 export const runtime = "nodejs";
 
@@ -70,6 +71,16 @@ export async function POST(request: Request) {
   const user = await getAuthenticatedUser(request);
   if (!user) {
     return NextResponse.json({ error: "Inicia sesión para continuar." }, { status: 401 });
+  }
+
+  if (stellarNetwork.name !== "testnet") {
+    return NextResponse.json(
+      {
+        error:
+          "Trustless Work no tiene una red Mainnet verificada para este flujo. El escrow está disponible solo en Testnet.",
+      },
+      { status: 503 },
+    );
   }
 
   const allowedEmails = (process.env.TRUSTLESS_WORK_ALLOWED_EMAILS ?? "")

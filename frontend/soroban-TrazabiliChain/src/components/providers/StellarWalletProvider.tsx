@@ -1,9 +1,11 @@
 "use client";
 
 import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { getWalletNetworkLabel, stellarNetwork } from "@/lib/stellar/network";
 
 type WalletKit = {
   getAddress: () => Promise<{ address: string }>;
+  getNetwork: () => Promise<{ network: string; networkPassphrase: string }>;
   authModal: () => Promise<{ address: string }>;
   disconnect: () => Promise<void>;
   signTransaction: (
@@ -14,6 +16,7 @@ type WalletKit = {
 
 type StellarWalletContextValue = {
   address: string | null;
+  networkPassphrase: string | null;
   isReady: boolean;
   connect: () => Promise<string>;
   disconnect: () => Promise<void>;
@@ -25,6 +28,7 @@ export const StellarWalletContext = createContext<StellarWalletContextValue | nu
 export function StellarWalletProvider({ children }: { children: ReactNode }) {
   const kitRef = useRef<WalletKit | null>(null);
   const [address, setAddress] = useState<string | null>(null);
+  const [networkPassphrase, setNetworkPassphrase] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -46,7 +50,8 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
             new xbull.xBullModule(),
             new rabet.RabetModule(),
           ],
-          network: types.Networks.TESTNET,
+          network:
+            stellarNetwork.name === "testnet" ? types.Networks.TESTNET : types.Networks.PUBLIC,
           authModal: { hideUnsupportedWallets: true },
         });
         kitRef.current = sdk.StellarWalletsKit;
@@ -55,10 +60,13 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
           const wallet = await sdk.StellarWalletsKit.getAddress();
           if (isMounted) {
             setAddress(wallet.address);
+            const network = await sdk.StellarWalletsKit.getNetwork();
+            setNetworkPassphrase(network.networkPassphrase);
           }
         } catch {
           if (isMounted) {
             setAddress(null);
+            setNetworkPassphrase(null);
           }
         }
       })
@@ -81,12 +89,15 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
 
     const wallet = await kitRef.current.authModal();
     setAddress(wallet.address);
+    const network = await kitRef.current.getNetwork();
+    setNetworkPassphrase(network.networkPassphrase);
     return wallet.address;
   }
 
   async function disconnect() {
     await kitRef.current?.disconnect();
     setAddress(null);
+    setNetworkPassphrase(null);
   }
 
   async function signTransaction(xdr: string) {
@@ -94,9 +105,17 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
       throw new Error("Conecta una wallet de Stellar antes de firmar.");
     }
 
+    const walletNetwork = await kitRef.current.getNetwork();
+    setNetworkPassphrase(walletNetwork.networkPassphrase);
+    if (walletNetwork.networkPassphrase !== stellarNetwork.passphrase) {
+      throw new Error(
+        `La wallet está en ${getWalletNetworkLabel(walletNetwork.networkPassphrase)} y la aplicación usa ${stellarNetwork.label}. Cambia la red de la wallet antes de firmar.`,
+      );
+    }
+
     const { signedTxXdr, signerAddress } = await kitRef.current.signTransaction(xdr, {
       address,
-      networkPassphrase: "Test SDF Network ; September 2015",
+      networkPassphrase: stellarNetwork.passphrase,
     });
 
     if (signerAddress && signerAddress !== address) {
@@ -108,7 +127,7 @@ export function StellarWalletProvider({ children }: { children: ReactNode }) {
 
   return (
     <StellarWalletContext.Provider
-      value={{ address, isReady, connect, disconnect, signTransaction }}
+      value={{ address, networkPassphrase, isReady, connect, disconnect, signTransaction }}
     >
       {children}
     </StellarWalletContext.Provider>
