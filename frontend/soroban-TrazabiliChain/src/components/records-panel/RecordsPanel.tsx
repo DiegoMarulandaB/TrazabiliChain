@@ -71,7 +71,7 @@ const cropVarieties: Record<string, string[]> = {
 };
 
 const qualityGrades = ["Especialidad", "Premium", "Primera", "Estándar", "Por clasificar"];
-const productPresentations = ["Grano entero", "Molido"];
+const productPresentations = ["Grano entero", "Molido", "Rollo de tela", "Bolsa ecológica"];
 const currencies = ["COP", "USD", "EUR", "MXN", "PEN", "BRL", "GBP", "JPY", "CAD", "AUD"];
 
 function formatCreatedAt(value: string) {
@@ -877,6 +877,8 @@ export function RecordsPanel({
                       onChange={(event) => setUnit(event.target.value)}
                       className="min-h-11 min-w-0 rounded-md border border-line bg-white px-2 text-sm text-ink"
                     >
+                      {" "}
+                      <option value="g">Gramo (g)</option>
                       <option value="kg">Kilogramo (kg)</option>
                       <option value="t">Tonelada (t)</option>
                       <option value="lb">Libra (lb)</option>

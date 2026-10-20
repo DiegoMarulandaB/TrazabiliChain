@@ -22,7 +22,7 @@ import {
 import { updateLotRecord, type DemoRole, type LotRecord } from "@/lib/lots/lot-storage";
 
 type PendingAction = "edited" | "deleted";
-const presentations = ["Grano entero", "Molido"];
+const presentations = ["Grano entero", "Molido", "Rollo de tela", "Bolsa ecológica"];
 const maximumProductImageSize = 2 * 1024 * 1024;
 const acceptedProductImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -486,6 +486,7 @@ export function LotManagement({
                     aria-label="Unidad de venta"
                     className="min-h-10 min-w-0 rounded-md border border-line bg-white px-2 text-sm"
                   >
+                    <option value="g">Gramo (g)</option>
                     <option value="kg">Kilogramo (kg)</option>
                     <option value="t">Tonelada (t)</option>
                     <option value="lb">Libra (lb)</option>

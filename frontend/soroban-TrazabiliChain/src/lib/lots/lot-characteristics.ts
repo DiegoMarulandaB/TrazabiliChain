@@ -18,7 +18,7 @@ export const emptyLotCharacteristics: LotCharacteristicsData = {
   quantity: "1",
   price: "",
   currency: "COP",
-  unit: "kg",
+  unit: "g",
   otherDetails: "",
 };
 
@@ -82,6 +82,7 @@ export function getCurrencyGroupingSeparator(currency: string) {
 export function getUnitLabel(unit: string, quantity = 1) {
   const count = typeof quantity === "number" ? quantity : Number(quantity);
   const isSingular = count === 1;
+   if (unit === "g") return isSingular ? "gramo" : "gramo";
   if (unit === "kg") return isSingular ? "kilogramo" : "kilogramos";
   if (unit === "t") return isSingular ? "tonelada" : "toneladas";
   if (unit === "lb") return isSingular ? "libra" : "libras";
