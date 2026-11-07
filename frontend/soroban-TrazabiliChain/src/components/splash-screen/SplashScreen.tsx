@@ -2,6 +2,7 @@
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import Image from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 gsap.registerPlugin(useGSAP);
@@ -100,21 +101,24 @@ export function SplashScreen({ children }: SplashScreenProps) {
           </p>
           <section className="w-full max-w-lg text-center" aria-labelledby="splash-title">
             <div data-splash-content>
-              <span
-                className="mx-auto mb-7 grid size-14 place-items-center rounded-lg bg-accent font-display text-3xl font-semibold text-white shadow-sm"
+              <Image
+                src="/logoTraza-readable.webp"
+                alt=""
                 aria-hidden="true"
-              >
-                T
-              </span>
-              <p className="mb-3 text-[11px] font-bold text-accent">
+                width={360}
+                height={174}
+                preload
+                className="mx-auto mb-5 h-auto w-64 object-contain sm:w-80"
+              />
+              {/* <p className="mb-3 text-[11px] font-bold text-accent">
                 TRAZABILIDAD PARA CADENAS RESPONSABLES
-              </p>
-              <h1
+              </p> */}
+              {/* <h1
                 id="splash-title"
                 className="mb-4 font-display text-4xl font-medium text-ink sm:text-5xl"
               >
                 TrazabiliChain
-              </h1>
+              </h1> */}
               <p className="mx-auto mb-10 max-w-md text-sm leading-6 text-gray-700  sm:text-base">
                 Conectamos el origen de cada producto con un historial verificable de su recorrido y
                 sus evidencias.

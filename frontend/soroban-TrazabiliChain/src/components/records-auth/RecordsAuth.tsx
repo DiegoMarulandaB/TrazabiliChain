@@ -2,6 +2,7 @@
 
 import { ArrowRight, LockKey } from "@phosphor-icons/react";
 import { driver } from "driver.js";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -685,8 +686,14 @@ export function RecordsAuth() {
   return (
     <section className="mx-auto grid max-w-5xl overflow-hidden border border-line bg-white shadow-[0_24px_80px_-48px_rgba(25,51,50,0.5)] lg:grid-cols-[0.9fr_1.1fr]">
       <div className="flex min-h-64 flex-col justify-between bg-ink p-6 text-white sm:p-9 lg:min-h-136">
-        <div className="grid size-10 place-items-center rounded-md bg-accent-soft font-display text-xl font-semibold text-ink">
-          T
+        <div className="w-fit rounded-md bg-paper p-2">
+          <Image
+            src="/logoTraza-readable.webp"
+            alt="TrazabiliChain"
+            width={387}
+            height={199}
+            className="h-12 w-auto object-contain"
+          />
         </div>
         <div className="mt-10">
           <p className="mb-3 text-xs font-semibold uppercase text-[#a9d7c5]">

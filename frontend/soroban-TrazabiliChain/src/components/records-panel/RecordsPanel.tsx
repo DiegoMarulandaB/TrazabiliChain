@@ -71,7 +71,11 @@ const cropVarieties: Record<string, string[]> = {
 };
 
 const qualityGrades = ["Especialidad", "Premium", "Primera", "Estándar", "Por clasificar"];
-const productPresentations = ["Grano entero", "Molido", "Rollo de tela", "Bolsa ecológica"];
+const productPresentations: Record<string, string[]> = {
+  "Café orgánico": ["Grano entero", "Molido"],
+  "Cacao orgánico": ["Grano entero", "Molido"],
+  "Algodón orgánico": ["Rollo de tela", "Bolsa ecológica"],
+};
 const currencies = ["COP", "USD", "EUR", "MXN", "PEN", "BRL", "GBP", "JPY", "CAD", "AUD"];
 
 function formatCreatedAt(value: string) {
@@ -723,7 +727,7 @@ export function RecordsPanel({
                     className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-sm text-ink"
                   >
                     <option value="">Selecciona una presentación</option>
-                    {productPresentations.map((item) => (
+                    {(productPresentations[form.product] ?? []).map((item) => (
                       <option key={item}>{item}</option>
                     ))}
                   </select>

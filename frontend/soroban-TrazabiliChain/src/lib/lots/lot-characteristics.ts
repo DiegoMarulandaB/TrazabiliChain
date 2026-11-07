@@ -15,7 +15,7 @@ export const emptyLotCharacteristics: LotCharacteristicsData = {
   presentation: "",
   harvest: "",
   quality: "",
-  quantity: "1",
+  quantity: "",
   price: "",
   currency: "COP",
   unit: "g",
@@ -82,11 +82,31 @@ export function getCurrencyGroupingSeparator(currency: string) {
 export function getUnitLabel(unit: string, quantity = 1) {
   const count = typeof quantity === "number" ? quantity : Number(quantity);
   const isSingular = count === 1;
-   if (unit === "g") return isSingular ? "gramo" : "gramo";
+  if (unit === "g") return isSingular ? "gramo" : "gramos";
   if (unit === "kg") return isSingular ? "kilogramo" : "kilogramos";
   if (unit === "t") return isSingular ? "tonelada" : "toneladas";
   if (unit === "lb") return isSingular ? "libra" : "libras";
   return unit;
+}
+
+function getUnitCode(unit: string) {
+  if (unit === "gramo" || unit === "gramos") return "g";
+  if (unit === "kilogramo" || unit === "kilogramos") return "kg";
+  if (unit === "tonelada" || unit === "toneladas") return "t";
+  if (unit === "libra" || unit === "libras") return "lb";
+  return unit;
+}
+
+function parsePrice(value: string) {
+  const match = value.match(
+    /^([\d.,]+)\s+([A-Z]{3})(?:\/(g|gramo|gramos|kg|kilogramo|kilogramos|t|tonelada|toneladas|lb|libra|libras))?$/,
+  );
+  if (!match || !Number.isFinite(parseLocalizedNumber(match[1], match[2]))) return null;
+  return {
+    amount: match[1],
+    currency: match[2],
+    unit: match[3] ? getUnitCode(match[3]) : "",
+  };
 }
 
 export function parseLocalizedNumber(value: string, currency = "COP") {
@@ -114,6 +134,8 @@ export function formatNumberForCurrency(number: number, currency: string) {
 export function parseLotCharacteristics(value: string): LotCharacteristicsData {
   const result = { ...emptyLotCharacteristics };
   const otherDetails: string[] = [];
+  let hasQuantityUnit = false;
+  let hasExplicitPrice = false;
 
   for (const entry of value
     .split(" · ")
@@ -125,25 +147,52 @@ export function parseLotCharacteristics(value: string): LotCharacteristicsData {
     const field = fieldLabels[label];
 
     if (field) {
-      result[field] = detail;
-    } else if (label === "Valor") {
-      const price = detail.match(/^(.+?)\s+([A-Z]{3})\/(kg|t|lb)$/);
+      if (field === "quantity") {
+        const quantity = detail.match(
+          /^(.+?)\s+(g|gramo|gramos|kg|kilogramo|kilogramos|t|tonelada|toneladas|lb|libra|libras)$/,
+        );
+        const unitOnly = detail.match(
+          /^(g|gramo|gramos|kg|kilogramo|kilogramos|t|tonelada|toneladas|lb|libra|libras)$/,
+        );
+        const parsedUnit = quantity?.[2] ?? unitOnly?.[1];
+        result.quantity = quantity ? quantity[1] : unitOnly ? "" : detail;
+        if (parsedUnit) {
+          result.unit = getUnitCode(parsedUnit);
+          hasQuantityUnit = true;
+        }
+      } else {
+        result[field] = detail;
+      }
+    } else if (label === "Valor" || label === "Valor del producto") {
+      const price = parsePrice(detail);
       if (price) {
-        result.price = price[1];
-        result.currency = price[2];
-        result.unit = price[3];
+        result.price = price.amount;
+        result.currency = price.currency;
+        if (price.unit && !hasQuantityUnit) result.unit = price.unit;
+        hasExplicitPrice = true;
       } else {
         otherDetails.push(detail);
       }
     } else if (label === "Otros datos del producto") {
-      otherDetails.push(detail);
+      for (const item of detail.split(" · ").map((part) => part.trim()).filter(Boolean)) {
+        const legacyPrice = parsePrice(item);
+        if (legacyPrice) {
+          if (!hasExplicitPrice && !result.price) {
+            result.price = legacyPrice.amount;
+            result.currency = legacyPrice.currency;
+            if (legacyPrice.unit && !hasQuantityUnit) result.unit = legacyPrice.unit;
+          }
+        } else {
+          otherDetails.push(item);
+        }
+      }
     } else {
       otherDetails.push(entry);
     }
   }
 
   const quantity = parseLocalizedNumber(result.quantity, result.currency);
-  if (Number.isFinite(quantity)) result.quantity = String(quantity);
+  result.quantity = Number.isFinite(quantity) ? String(quantity) : "";
 
   result.otherDetails = otherDetails.join(" · ");
   return result;
@@ -159,7 +208,7 @@ export function formatLotCharacteristics(value: LotCharacteristicsData) {
       ? `Cantidad: ${formatNumberForCurrency(Number(value.quantity), value.currency)} ${getUnitLabel(value.unit, Number(value.quantity))}`
       : "",
     value.price.trim()
-      ? `Valor: ${formatLocalizedNumberInput(value.price, value.currency)} ${value.currency}/${getUnitLabel(value.unit, Number(value.quantity))}`
+      ? `Valor: ${formatLocalizedNumberInput(value.price, value.currency)} ${value.currency}`
       : "",
     value.otherDetails.trim() ? `Otros datos del producto: ${value.otherDetails.trim()}` : "",
   ]
@@ -169,6 +218,7 @@ export function formatLotCharacteristics(value: LotCharacteristicsData) {
 
 export function listLotCharacteristics(value: string) {
   const parsed = parseLotCharacteristics(value);
+  const quantity = parseLocalizedNumber(parsed.quantity, parsed.currency);
   return [
     ["Variedad", parsed.variety],
     ["Presentación", parsed.presentation],
@@ -176,14 +226,14 @@ export function listLotCharacteristics(value: string) {
     ["Calidad", parsed.quality],
     [
       "Cantidad",
-      parsed.quantity
-        ? `${formatNumberForCurrency(Number(parsed.quantity), parsed.currency)} ${getUnitLabel(parsed.unit, Number(parsed.quantity))}`
+      Number.isFinite(quantity)
+        ? `${formatNumberForCurrency(quantity, parsed.currency)} ${getUnitLabel(parsed.unit, quantity)}`
         : "",
     ],
     [
-      "Valor",
+      "Valor del producto",
       parsed.price
-        ? `${getCurrencySymbol(parsed.currency)} ${formatLocalizedNumberInput(parsed.price, parsed.currency)} ${parsed.currency}/${getUnitLabel(parsed.unit, Number(parsed.quantity))}`
+        ? `${getCurrencySymbol(parsed.currency)} ${formatLocalizedNumberInput(parsed.price, parsed.currency)} ${parsed.currency}`
         : "",
     ],
     ["Otros datos del producto", parsed.otherDetails],

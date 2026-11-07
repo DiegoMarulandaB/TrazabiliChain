@@ -49,8 +49,19 @@ export function PublicLotPage({ id }: { id: string }) {
 
   return (
     <main className="mx-auto min-h-svh w-[min(100%-2.5rem,48rem)] py-12 sm:py-20">
-      <Link href="/" className="text-sm font-semibold text-accent underline underline-offset-4">
-        Volver a TrazabiliChain
+      <Link
+        href="/"
+        aria-label="Volver a TrazabiliChain"
+        className="mb-8 inline-flex rounded-md focus-visible:outline-offset-4"
+      >
+        <Image
+          src="/logoTraza-readable.webp"
+          alt=""
+          aria-hidden="true"
+          width={387}
+          height={199}
+          className="h-14 w-auto object-contain"
+        />
       </Link>
 
       {!hydrated || isLoading ? (

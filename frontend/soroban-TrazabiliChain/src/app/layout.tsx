@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   description: siteDescription,
   applicationName: "TrazabiliChain",
   category: "Supply chain traceability",
+  icons: {
+    icon: [{ url: "/logoTraza-readable.webp", type: "image/webp" }],
+    shortcut: "/logoTraza-readable.webp",
+    apple: "/logoTraza-readable.webp",
+  },
   keywords: [
     "TrazabiliChain",
     "trazabilidad",

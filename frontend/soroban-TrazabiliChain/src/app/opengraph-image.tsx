@@ -1,4 +1,8 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+const logoTraza = await readFile(join(process.cwd(), "public/logoTraza-readable.webp"));
 
 export const alt = "TrazabiliChain: trazabilidad del origen al destino";
 export const size = { width: 1200, height: 630 };
@@ -20,23 +24,12 @@ export default function OpenGraphImage() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-        <div
-          style={{
-            width: 62,
-            height: 62,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 12,
-            backgroundColor: "#176b59",
-            color: "white",
-            fontSize: 36,
-            fontWeight: 700,
-          }}
-        >
-          T
-        </div>
-        <span style={{ fontSize: 30, fontWeight: 600 }}>TrazabiliChain</span>
+        <img
+          src={`data:image/webp;base64,${logoTraza.toString("base64")}`}
+          width={220}
+          height={106}
+          alt="TrazabiliChain"
+        />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 22, maxWidth: 960 }}>

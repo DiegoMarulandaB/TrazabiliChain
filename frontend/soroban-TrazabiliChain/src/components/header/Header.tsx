@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ProductNotificationsBell } from "@/components/notifications/ProductNotificationsBell";
 import { ProducerAnchorNotifications } from "@/components/notifications/ProducerAnchorNotifications";
@@ -60,7 +61,7 @@ export function Header() {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-50 border-b border-line bg-white/90 backdrop-blur-md"
+      className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md"
       onKeyDown={handleMenuKeyDown}
     >
       <a
@@ -76,20 +77,21 @@ export function Header() {
           aria-label="TrazabiliChain, inicio"
           onClick={closeMenu}
         >
-          <span
-            className="grid size-7.5 place-items-center rounded-md bg-accent font-sans text-base text-white"
-            aria-hidden="true"
-          >
-            T
-          </span>
-          <span>TrazabiliChain</span>
+          <Image
+            src="/logoTraza-readable.webp"
+            alt="TrazabiliChain"
+            width={387}
+            height={199}
+            preload
+            className="h-14 w-auto object-contain"
+          />
         </Link>
 
         <div className="flex items-center gap-3 sm:gap-6">
           <nav
             id="primary-navigation"
             aria-label="Navegación principal"
-            className={`${isMenuOpen ? "flex" : "hidden"} absolute left-0 right-0 top-full flex-col border-b border-line bg-white px-5 py-3 shadow-lg md:static md:flex md:flex-row md:items-center md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none`}
+            className={`${isMenuOpen ? "flex" : "hidden"} absolute left-0 right-0 top-full flex-col border-b border-line bg-paper px-5 py-3 shadow-lg md:static md:flex md:flex-row md:items-center md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none`}
           >
             {navigation.map(({ href, label }) => (
               <Link

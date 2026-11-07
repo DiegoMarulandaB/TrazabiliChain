@@ -22,7 +22,11 @@ import {
 import { updateLotRecord, type DemoRole, type LotRecord } from "@/lib/lots/lot-storage";
 
 type PendingAction = "edited" | "deleted";
-const presentations = ["Grano entero", "Molido", "Rollo de tela", "Bolsa ecológica"];
+const presentations: Record<string, string[]> = {
+  "Café orgánico": ["Grano entero", "Molido"],
+  "Cacao orgánico": ["Grano entero", "Molido"],
+  "Algodón orgánico": ["Rollo de tela", "Bolsa ecológica"],
+};
 const maximumProductImageSize = 2 * 1024 * 1024;
 const acceptedProductImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -353,7 +357,7 @@ export function LotManagement({
                   className="min-h-10 min-w-0 rounded-md border border-line bg-white px-3 text-sm"
                 >
                   <option value="">Selecciona la presentación</option>
-                  {presentations.map((presentation) => (
+                  {(presentations[product] ?? []).map((presentation) => (
                     <option key={presentation}>{presentation}</option>
                   ))}
                 </select>

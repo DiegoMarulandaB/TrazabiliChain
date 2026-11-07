@@ -116,13 +116,13 @@ export function LotSharing({ record }: { record: LotRecord }) {
 
   return (
     <div className="mt-5 grid gap-4 border-t border-line pt-4 sm:grid-cols-[auto_1fr] sm:items-center">
-      <div className="w-fit rounded-md border border-line bg-white p-2">
+      <div className="w-fit rounded-md border border-line bg-paper p-2">
         <QRCodeSVG
           value={shareUrl}
           size={128}
           level="H"
           marginSize={2}
-          imageSettings={{ src: "/brand-mark.svg", width: 30, height: 30, excavate: true }}
+          imageSettings={{ src: "/logoTraza-readable.webp", width: 42, height: 22, excavate: true }}
           title={`Código QR del lote ${record.product}`}
           aria-label={`Código QR con el enlace público de consulta para el lote ${record.product}`}
         />

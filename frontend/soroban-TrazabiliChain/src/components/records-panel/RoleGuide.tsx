@@ -71,12 +71,14 @@ const roleFieldSteps: Record<DemoRole, GuideStep[]> = {
     {
       element: "#crop-quantity",
       title: "Cantidad",
-      description: "Ingresa el volumen o peso del producto con un valor mayor que cero.",
+      description:
+        "Ingresa una cantidad mayor que cero. Puedes expresarla en gramos, kilogramos, toneladas o libras.",
     },
     {
       element: "#crop-unit",
       title: "Unidad de venta",
-      description: "Selecciona la unidad que corresponde a la cantidad registrada.",
+      description:
+        "Selecciona la unidad de la cantidad registrada: gramo (g), kilogramo (kg), tonelada (t) o libra (lb).",
     },
     {
       element: "#other-product-details",
