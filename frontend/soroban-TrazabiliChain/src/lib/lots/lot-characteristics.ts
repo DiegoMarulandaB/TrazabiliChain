@@ -174,7 +174,10 @@ export function parseLotCharacteristics(value: string): LotCharacteristicsData {
         otherDetails.push(detail);
       }
     } else if (label === "Otros datos del producto") {
-      for (const item of detail.split(" · ").map((part) => part.trim()).filter(Boolean)) {
+      for (const item of detail
+        .split(" · ")
+        .map((part) => part.trim())
+        .filter(Boolean)) {
         const legacyPrice = parsePrice(item);
         if (legacyPrice) {
           if (!hasExplicitPrice && !result.price) {
