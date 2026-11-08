@@ -62,7 +62,7 @@ export function RecordsAuth() {
   const [stage, setStage] = useState<AccessStage>("credentials");
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [workflowRole, setWorkflowRole] = useState<DemoRole>("producer");
-  const [selectedProduct, setSelectedProduct] = useState(productOptions[0]);
+  const [selectedProduct, setSelectedProduct] = useState("");
   const [lotPrefix, setLotPrefix] = useState("");
   const [candidates, setCandidates] = useState<LotRecord[]>([]);
   const [selectedLotId, setSelectedLotId] = useState("");
@@ -491,16 +491,22 @@ export function RecordsAuth() {
             </label>
             <select
               id="session-workflow-product"
+              required
+              aria-describedby="session-workflow-product-help"
               value={selectedProduct}
               onChange={(event) => setSelectedProduct(event.target.value)}
               className="min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink"
             >
+              <option value="">Selecciona un producto</option>
               {productOptions.map((product) => (
                 <option key={product} value={product}>
                   {product}
                 </option>
               ))}
             </select>
+            <p id="session-workflow-product-help" className="mb-0 text-xs leading-5 text-gray-700">
+              Selecciona el producto con el que quieres trabajar.
+            </p>
           </div>
           <div className="flex flex-wrap justify-between gap-3 pt-2">
             <button
@@ -513,7 +519,8 @@ export function RecordsAuth() {
             <button
               type="button"
               onClick={continueAfterAuthentication}
-              className="min-h-11 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746]"
+              disabled={!selectedProduct}
+              className="min-h-11 rounded-md bg-accent px-4 text-sm font-semibold text-white hover:bg-[#125746] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Continuar
             </button>
@@ -761,6 +768,7 @@ export function RecordsAuth() {
                 <select
                   id="workflow-product"
                   required
+                  aria-describedby="workflow-product-help"
                   value={selectedProduct}
                   onChange={(event) => setSelectedProduct(event.target.value)}
                   className="min-h-11 w-full cursor-pointer rounded-md border border-line bg-white px-3 text-sm text-ink"
@@ -772,7 +780,7 @@ export function RecordsAuth() {
                     </option>
                   ))}
                 </select>
-                <p className="mb-0 text-xs leading-5 text-gray-700">
+                <p id="workflow-product-help" className="mb-0 text-xs leading-5 text-gray-700">
                   Elige el producto con el que quieres trabajar después de entrar.
                 </p>
               </div>
