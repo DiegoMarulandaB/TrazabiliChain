@@ -10,7 +10,7 @@ Este entregable cubre el primer punto del Sprint 1:
 4. Registrar el ID del contrato y las transacciones verificables.
 5. Validar el flujo de administración y autorización.
 
-La evidencia técnica completa y el contexto del MVP están vinculados en [MVPFunctional.md](../../semana4/MVPFunctional.md) y [ac.md](../../semana4/ac.md).
+La evidencia técnica completa y el contexto del MVP están vinculados en [MVPFunctional.md](../../semana4/MVPFunctional.md)
 
 ## Estado final
 
@@ -83,4 +83,4 @@ Resultados comprobados:
 
 ## Evidencia del MVP
 
-El detalle funcional, el alcance de Stellar, las limitaciones de verificación y el estado del despliegue se mantienen en [MVPFunctional.md](../../semana4/MVPFunctional.md). Los pasos de preparación, aprobación y registro técnico se conservan también en [ac.md](../../semana4/ac.md).
+El detalle funcional, el alcance de Stellar, las limitaciones de verificación y el estado del despliegue se mantienen en [MVPFunctional.md](../../semana4/MVPFunctional.md).
