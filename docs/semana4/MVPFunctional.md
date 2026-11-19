@@ -71,10 +71,10 @@ Las hipótesis se considerarán apoyadas si al menos cuatro de cinco responsable
 
 ## Evidencia
 
-- Despliegue anterior del contrato en Stellar Testnet: [CBOJPR4LUMXN3YMO5QAM76XPIMYHFL23OYBGB5HHYSS45WCIXREQETNZ](https://stellar.expert/explorer/testnet/contract/CBOJPR4LUMXN3YMO5QAM76XPIMYHFL23OYBGB5HHYSS45WCIXREQETNZ). El WASM actual, pendiente de despliegue, tiene SHA-256 `6a187a5f796587465015cef2ea9e5a544e4d9dbf6306496c1796e904d30f9154`. SHA-256 es la huella criptográfica de los bytes exactos del archivo WASM: permite comprobar que el artefacto revisado no cambió, pero no es el ID del contrato ni una transacción de despliegue. Desplegar no es una acción inocua: publica el binario en una red y crea una instancia/ID de contrato que después debe configurarse en la aplicación; requiere revisar red, bytecode, cuenta administradora y tarifas. No se realizó ningún despliegue.
+- Contrato vigente desplegado en Stellar Testnet: [CDQ3KMIYUH76AVRII2CCR2CEXYRRL5HYAWSMB4VRZ6ZFHYGFU2NFDM5T](https://stellar.expert/explorer/testnet/contract/CDQ3KMIYUH76AVRII2CCR2CEXYRRL5HYAWSMB4VRZ6ZFHYGFU2NFDM5T). El WASM desplegado tiene SHA-256 `554eca407534c5ae22e0fd9c6bae59b977aa67d705037618d9a485f63febb253`. El contrato anterior fue [CBOJPR4LUMXN3YMO5QAM76XPIMYHFL23OYBGB5HHYSS45WCIXREQETNZ](https://stellar.expert/explorer/testnet/contract/CBOJPR4LUMXN3YMO5QAM76XPIMYHFL23OYBGB5HHYSS45WCIXREQETNZ), cuyo WASM obtenido tenía SHA-256 `dce43fd12375dc01cf858563c1130410e33d107601b3099e13e6b202a49598bb`. Las huellas no reemplazan el ID del contrato ni las transacciones. Instalación: [682fd8c7ceff9b58a711f91810af66d2523ad91c34f573f10d9b496816cf164f](https://stellar.expert/explorer/testnet/tx/682fd8c7ceff9b58a711f91810af66d2523ad91c34f573f10d9b496816cf164f). Despliegue/instancia: [bde712df97e911231cfad2c4b2e680cccc6c3cec9c821b55d82f6cc8ffbd495c](https://stellar.expert/explorer/testnet/tx/bde712df97e911231cfad2c4b2e680cccc6c3cec9c821b55d82f6cc8ffbd495c).
 - Enlace público del producto: [dominio](https://trazabilichain.vercel.app/)
 - Transacción de anclaje de esta iteración: pendiente de generar y enlazar desde una wallet autorizada en Testnet.
-- Video público [link](https://youtu.be/Irx8uoWZcgA)
+- Video público
 - Entrega en Apex: realizada
 
 ## Contrato de trazabilidad
